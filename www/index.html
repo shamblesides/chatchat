@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ChatChat</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- <link rel="manifest" href="/manifest.webmanifest"> -->
+  <!-- <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png"> -->
+  <!-- <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png"> -->
+  <!-- <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png"> -->
+
+  <style>
+    html {
+      height: 100%;
+    }
+    body {
+      margin: 0;
+      height: 100%;
+      background-color: black;
+      color: white;
+      overflow: hidden;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: 100vmin;
+      height: 60vmin;
+      margin: auto;
+      image-rendering: crisp-edges;
+      image-rendering: pixelated;
+      background-color: black;
+    }
+    noscript a {
+      color: darkturquoise;
+      font-size: xx-large;
+      display: block;
+      padding-top: 50px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <noscript>
+    <p>
+      <a target="_blank" href="https://www.enable-javascript.com/">
+        Enable JavaScript to play this game!
+      </a>
+    </p>
+  </noscript>
+
+  <div id="loader" style="display:none">Loading</div>
+
+  <canvas id="game" style="display:none"></canvas>
+
+  <script>
+    document.getElementById('loader').style.display = '';
+    window.onerror = window.onunhandledrejection = function (err) {
+      document.body.innerText = err.reason || err.message || err.toString();
+    }
+  </script>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
