@@ -1,8 +1,8 @@
 import { settings, SCALE_MODES, Application, Sprite, Container, Ticker } from './pixi.js';
 import { ready, spriteTextures, tileTextures } from './textures.js';
 import { MAP_TILES } from './map.js';
-const SCRW = 320/2; 
-const SCRH = 192/2; // 3:5 aspect ratio for screen part
+const SCRW = 16 * 10;
+const SCRH = 16 * 6;
 
 settings.SCALE_MODE = SCALE_MODES.NEAREST;
 settings.ROUND_PIXELS = true; // as in rounding sprite position to nearest integer
@@ -24,30 +24,11 @@ ready.then(() => {
   document.querySelector('#game').style.display = '';
 
   const world = new Container();
-  world.x = -500;
-  world.y = -200;
   application.stage.addChild(world);
 
   const tilemap = new Container();
   tilemap.cacheAsBitmap = true;
   world.addChild(tilemap);
-
-  let scrollx = 0, scrolly = 0;
-
-  Ticker.shared.add(() => {
-    world.x += scrollx;
-    world.y += scrolly;
-  })
-
-  window.addEventListener('keydown', e => {
-    scrollx = 0;
-    scrolly = 0;
-    console.log(e.key)
-    if (e.key === 'ArrowUp') scrolly = +1;
-    if (e.key === 'ArrowDown') scrolly = -1;
-    if (e.key === 'ArrowLeft') scrollx = +1;
-    if (e.key === 'ArrowRight') scrollx = -1;
-  })
 
   MAP_TILES.forEach((row, y) => {
     row.forEach((tile, x) => {
@@ -58,8 +39,26 @@ ready.then(() => {
     });
   });
 
+  const me = { x: 20, y: 20 };
   const sprite = new Sprite(spriteTextures[0]);
-  sprite.x = 10;
-  sprite.y = 10;
   world.addChild(sprite)
+
+  function updatePlayerAndCamera() {
+    const cameraX = Math.max(5, Math.min(20-5-1, me.x % 20)) + Math.floor(me.x/20)*20;
+    const cameraY = Math.max(3, Math.min(12-3-1, me.y % 12)) + Math.floor(me.y/12)*12;
+    sprite.x = me.x * 16;
+    sprite.y = me.y * 16;
+    world.x = -(cameraX * 16) + SCRW/2 - 8;
+    world.y = -(cameraY * 16) + SCRH/2 - 8;
+  }
+  updatePlayerAndCamera();
+
+  window.addEventListener('keydown', e => {
+    if (e.repeat) return;
+    if (e.key === 'ArrowUp') me.y -= 1;
+    if (e.key === 'ArrowDown') me.y += 1;
+    if (e.key === 'ArrowLeft') me.x -= 1;
+    if (e.key === 'ArrowRight') me.x += 1;
+    updatePlayerAndCamera();
+  })
 })
