@@ -4,6 +4,32 @@ import { MAP_TILES } from './map.js';
 const SCRW = 16 * 10;
 const SCRH = 16 * 6;
 
+const RIGHT = 3;
+const DOWN = 1;
+const LEFT = 2;
+const UP = 0;
+
+const keyMap = {
+  ArrowRight: RIGHT,
+  ArrowDown: DOWN,
+  ArrowLeft: LEFT,
+  ArrowUp: UP,
+};
+
+const DX = {
+  [RIGHT]: 1,
+  [LEFT]: -1,
+  [UP]: 0,
+  [DOWN]: 0
+};
+
+const DY = {
+  [DOWN]: 1,
+  [UP]: -1,
+  [RIGHT]: 0,
+  [LEFT]: 0,
+}
+
 settings.SCALE_MODE = SCALE_MODES.NEAREST;
 settings.ROUND_PIXELS = true; // as in rounding sprite position to nearest integer
 
