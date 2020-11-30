@@ -1,4 +1,4 @@
-import { settings, SCALE_MODES, Application, Sprite, Container, Ticker } from './pixi.js';
+import { settings, SCALE_MODES, Application, Sprite, Container, Ticker, AnimatedSprite } from './pixi.js';
 import { ready, spriteTextures, tileTextures } from './textures.js';
 import { MAP_TILES } from './map.js';
 const SCRW = 16 * 10;
