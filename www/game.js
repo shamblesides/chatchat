@@ -39,8 +39,10 @@ ready.then(() => {
     });
   });
 
-  const me = { x: 20, y: 20 };
-  const sprite = new Sprite(spriteTextures[0]);
+  const me = { x: 20, y: 20, facing: DOWN };
+  const sprite = new AnimatedSprite([spriteTextures[0], spriteTextures[1]]);
+  sprite.animationSpeed = 1/32;
+  sprite.play();
   world.addChild(sprite)
 
   function updatePlayerAndCamera() {
@@ -48,6 +50,9 @@ ready.then(() => {
     const cameraY = Math.max(3, Math.min(12-3-1, me.y % 12)) + Math.floor(me.y/12)*12;
     sprite.x = me.x * 16;
     sprite.y = me.y * 16;
+    sprite.textures[0] = spriteTextures[me.facing * 2]
+    sprite.textures[1] = spriteTextures[me.facing * 2 + 1]
+    sprite.gotoAndPlay(1-sprite.currentFrame)
     world.x = -(cameraX * 16) + SCRW/2 - 8;
     world.y = -(cameraY * 16) + SCRH/2 - 8;
   }
@@ -55,10 +60,11 @@ ready.then(() => {
 
   window.addEventListener('keydown', e => {
     if (e.repeat) return;
-    if (e.key === 'ArrowUp') me.y -= 1;
-    if (e.key === 'ArrowDown') me.y += 1;
-    if (e.key === 'ArrowLeft') me.x -= 1;
-    if (e.key === 'ArrowRight') me.x += 1;
+    const direction = keyMap[e.key];
+    if (direction == undefined) return;
+    me.facing = direction;
+    me.x += DX[direction];
+    me.y += DY[direction];
     updatePlayerAndCamera();
   })
 })
