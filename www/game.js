@@ -84,15 +84,28 @@ ready.then(() => {
   }
   updatePlayerAndCamera();
 
-  window.addEventListener('keydown', e => {
-    document.querySelector('input').focus();
-    if (e.repeat) return;
-    const direction = keyMap[e.key];
-    if (direction == undefined) return;
-    event.preventDefault();
+  function doMove(direction) {
     me.facing = direction;
     me.x += DX[direction];
     me.y += DY[direction];
     updatePlayerAndCamera();
+  }
+
+  let currentHandle = null;
+  window.addEventListener('keydown', e => {
+    const direction = keyMap[e.key];
+    if (direction == undefined) {
+      document.querySelector('input').focus();
+      return;
+    }
+    if (e.repeat) return;
+    event.preventDefault();
+    clearInterval(currentHandle);
+    const handle = setInterval(doMove, 250, direction);
+    currentHandle = handle
+    window.addEventListener('keyup', e2 => {
+      if (e2.key === e.key) clearInterval(handle);
+    })
+    doMove(direction);
   })
 })
