@@ -65,7 +65,20 @@ ready.then(() => {
     });
   });
 
-  const me = { x: 20, y: 20, facing: DOWN };
+  function collides(me) {
+    const tile = MAP_TILES[me.y][me.x];
+    if (tile >= 180 && tile < 200) {
+      const actioncollide = tile - 179;
+      console.log(actioncollide)
+      return true;
+    }
+    if (tile >= 11 && tile < 80) return true;
+    if (tile >= 134 && tile < 140) return true;
+    if (me.dog && tile >= 127 && tile < 134) return true;
+    return false;
+  }
+
+  const me = { x: 50, y: 32, facing: DOWN };
   const sprite = new AnimatedSprite([spriteTextures[0], spriteTextures[1]]);
   sprite.animationSpeed = 1/32;
   sprite.play();
@@ -88,6 +101,10 @@ ready.then(() => {
     me.facing = direction;
     me.x += DX[direction];
     me.y += DY[direction];
+    if (collides(me)) {
+      me.x -= DX[direction];
+      me.y -= DY[direction];
+    }
     updatePlayerAndCamera();
   }
 
