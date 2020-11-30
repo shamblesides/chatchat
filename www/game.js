@@ -59,9 +59,11 @@ ready.then(() => {
   updatePlayerAndCamera();
 
   window.addEventListener('keydown', e => {
+    document.querySelector('input').focus();
     if (e.repeat) return;
     const direction = keyMap[e.key];
     if (direction == undefined) return;
+    event.preventDefault();
     me.facing = direction;
     me.x += DX[direction];
     me.y += DY[direction];

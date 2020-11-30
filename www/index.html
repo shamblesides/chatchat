@@ -23,7 +23,7 @@
       overflow: hidden;
       touch-action: none;
     }
-    canvas {
+    canvas, #loader {
       display: block;
       width: 100vmin;
       height: 60vmin;
@@ -31,29 +31,56 @@
       image-rendering: crisp-edges;
       image-rendering: pixelated;
       background-color: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10vmin;
+    }
+    #chat {
+      display: flex;
+      flex-direction: column;
+      width: 100vmin;
+      height: 40vmin;
+      margin: auto;
+      border: double calc(100vmin / 64) black;
+      background-color: white;
+      color: black;
+      box-sizing: border-box;
+      font-size: 4vmin;
+      padding: 1vmin;
+    }
+    #chat #inner {
+      flex-grow: 1;
+    }
+    #chat input {
+      flex-shrink: 1;
+      font: inherit;
+      border: none;
+      border-top: solid calc(100vmin / 192) black;
+      margin: -1vmin;
     }
     noscript a {
-      color: darkturquoise;
-      font-size: xx-large;
-      display: block;
-      padding-top: 50px;
-      text-align: center;
+      font-size: 5vmin;
     }
   </style>
 </head>
 
 <body>
-  <noscript>
-    <p>
-      <a target="_blank" href="https://www.enable-javascript.com/">
-        Enable JavaScript to play this game!
-      </a>
-    </p>
-  </noscript>
-
   <div id="loader" style="display:none">Loading</div>
-
   <canvas id="game" style="display:none"></canvas>
+  <div id="chat">
+    <noscript>
+      <p>
+        <a target="_blank" href="https://www.enable-javascript.com/">
+          Enable JavaScript to play this game!
+        </a>
+      </p>
+    </noscript>
+    <div id="inner">
+      hi
+    </div>
+    <input type="text" placeholder="Say something" autofocus>
+  </div>
 
   <script>
     document.getElementById('loader').style.display = '';
