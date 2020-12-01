@@ -1,5 +1,5 @@
 import { settings, SCALE_MODES, Application, Sprite, Container, Ticker, AnimatedSprite } from './pixi.js';
-import { ready, spriteTextures, tileTextures } from './textures.js';
+import { ready as texturesReady, spriteTextures, tileTextures } from './textures.js';
 import { LEFT, DOWN, UP, RIGHT, DX, DY, Player, deserializePlayer } from './model.js'
 import { MAP_TILES } from './map.js';
 
@@ -16,7 +16,17 @@ const keyMap = {
 settings.SCALE_MODE = SCALE_MODES.NEAREST;
 settings.ROUND_PIXELS = true; // as in rounding sprite position to nearest integer
 
-ready.then(() => {
+texturesReady.then(() => {
+  document.querySelector('#loader').innerText = 'Connecting...'
+
+  const wsURL = location.protocol === 'https:' ? 'wss://chatchatgame.herokuapp.com' : 'ws://localhost:12000'
+  const ws = new WebSocket(wsURL);
+  ws.binaryType = 'arraybuffer';
+
+  const wsOpen = new Promise(done => {
+    ws.onopen = done;
+  })
+
   const isProbablyIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
   const application = new Application({
@@ -28,9 +38,6 @@ ready.then(() => {
     powerPreference: 'low-power',
     antialias: isProbablyIOS, // turning on antialias prevents the odd render bug on ios 11+. my iphone 4s w/ ios 9 is still affected...
   });
-
-  document.querySelector('#loader').remove();
-  document.querySelector('#game').style.display = '';
 
   const world = new Container();
   application.stage.addChild(world);
@@ -102,14 +109,6 @@ ready.then(() => {
 
   let myID = null;
 
-  const wsURL = location.protocol === 'https:' ? 'wss://chatchatgame.herokuapp.com' : 'ws://localhost:12000'
-  const ws = new WebSocket(wsURL);
-  ws.binaryType = 'arraybuffer';
-
-  ws.onopen = function() {
-    console.log('open')
-    ws.send('hi');
-  }
   ws.onmessage = function(ev) {
     if (ev.data instanceof ArrayBuffer) {
       const arr = new DataView(ev.data);
@@ -142,30 +141,35 @@ ready.then(() => {
     console.error('Lost connection')
   }
 
-  let currentHandle = null;
-  window.addEventListener('keydown', e => {
-    const direction = keyMap[e.key];
-    if (direction == undefined) {
-      document.querySelector('input').focus();
-      return;
-    }
-    if (e.repeat) return;
-    event.preventDefault();
-    clearInterval(currentHandle);
-    const handle = setInterval(doMove, 250, direction);
-    currentHandle = handle
-    window.addEventListener('keyup', e2 => {
-      if (e2.key === e.key) clearInterval(handle);
-    })
-    doMove(direction);
-  })
+  wsOpen.then(() => {
+    document.querySelector('#loader').remove();
+    document.querySelector('#game').style.display = '';
 
-  const input = document.querySelector('input')
-  input.onkeypress = e => {
-    if (e.key === 'Enter') {
-      applyMessageToSprite(me.id, input.value)
-      ws.send(input.value);
-      input.value = '';
+    let currentHandle = null;
+    window.addEventListener('keydown', e => {
+      const direction = keyMap[e.key];
+      if (direction == undefined) {
+        document.querySelector('input').focus();
+        return;
+      }
+      if (e.repeat) return;
+      event.preventDefault();
+      clearInterval(currentHandle);
+      const handle = setInterval(doMove, 250, direction);
+      currentHandle = handle
+      window.addEventListener('keyup', e2 => {
+        if (e2.key === e.key) clearInterval(handle);
+      })
+      doMove(direction);
+    })
+
+    const input = document.querySelector('input')
+    input.onkeypress = e => {
+      if (e.key === 'Enter') {
+        applyMessageToSprite(me.id, input.value)
+        ws.send(input.value);
+        input.value = '';
+      }
     }
-  }
+  });
 })
