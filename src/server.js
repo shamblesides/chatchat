@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import { Player } from './model.js'
 
-const wss = new WebSocket.Server({ port: 12000 })
+const wss = new WebSocket.Server({ port: process.env.PORT || 12000 })
 
 const MAX_PLAYERS = 256;
 const availableIDs = Array(MAX_PLAYERS).fill().map((_,i) => i);
