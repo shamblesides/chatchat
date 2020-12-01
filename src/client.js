@@ -57,35 +57,70 @@ texturesReady.then(() => {
 
   const me = new Player(999);
 
+  const catStates = new Map();
   const catSprites = new Map();
 
-  function updateSprite(parsed) {
+  function updateSprite(player) {
+    catStates.set(player.id, player);
     let sprite;
-    if (catSprites.get(parsed.id)) {
-      sprite = catSprites.get(parsed.id)
+    if (catSprites.get(player.id)) {
+      sprite = catSprites.get(player.id)
     } else {
       sprite = new AnimatedSprite([spriteTextures[0], spriteTextures[1]]);
       sprite.animationSpeed = 1/32;
       sprite.play();
       world.addChild(sprite)
-      catSprites.set(parsed.id, sprite)
+      catSprites.set(player.id, sprite)
     }
-    sprite.x = parsed.x * 16;
-    sprite.y = parsed.y * 16;
-    const spriteOffset = parsed.color * 20 + (parsed.isNapping ? 12 : (parsed.facing * 2))
+    sprite.x = player.x * 16;
+    sprite.y = player.y * 16;
+    const spriteOffset = player.color * 20 + (player.isNapping ? 12 : (player.facing * 2))
     sprite.textures[0] = spriteTextures[spriteOffset]
     sprite.textures[1] = spriteTextures[spriteOffset + 1]
     sprite.gotoAndPlay(1-sprite.currentFrame)
+    clearTimeout(emoteTimers[player.id])
   }
 
+  const EMOTES = new Map([
+    ['/meow', { offset: 8, timer: 3000, cat: true, catSounds: ['meow1', 'meow2', 'meow3', 'meow4', 'meow5'] }],
+    ['/purr', { offset: 10, timer: 3000, cat: true, catSounds: ['catpurr'] }],
+    ['/screech', { offset: 14, timer: 3000, cat: true, catSounds: ['catscreech'] }],
+    ['/bark', { offset: 8, timer: 3000, dog: true, dogSounds: ['dogbark1', 'dogbark2', 'dogbark3', 'dogbark4', 'dogbark5'] }],
+    ['/pant', { offset: 10, timer: 3000, dog: true, dogSounds: ['dogpant'] }],
+    ['/howl', { offset: 14, timer: 3000, dog: true, dogSounds: ['doghowl'] }],
+    ['/nap', { offset: 12, catSounds: ['catnap'], dogSounds: ['dognap'] }],
+  ]);
+  EMOTES.forEach(e => {
+    if (e.catSounds) e.catSounds = e.catSounds.map(name => new Audio(`sounds/${name}.mp3`));
+    if (e.dogSounds) e.dogSounds = e.dogSounds.map(name => new Audio(`sounds/${name}.mp3`));
+  });
+  const emoteTimers = {};
   function applyMessageToSprite(id, message) {
-    if (message === '/nap') {
-      const sprite = catSprites.get(id);
-      const oldTextures = [...sprite.textures];
-      sprite.textures[0] = spriteTextures[12]
-      sprite.textures[1] = spriteTextures[13]
-      sprite.gotoAndPlay(0);
+    console.log(id, message)
+    const emote = EMOTES.get(message)
+    if (!emote) return;
+
+    const player = catStates.get(id);
+    if (emote.dog && !player.isDog) return;
+    if (emote.cat && player.isDog) return;
+
+    const spriteOffset = player.color * 20 + emote.offset;
+    const sprite = catSprites.get(id);
+    sprite.textures[0] = spriteTextures[spriteOffset]
+    sprite.textures[1] = spriteTextures[spriteOffset + 1]
+    sprite.gotoAndPlay(1-sprite.currentFrame);
+
+    if (emote.timer) {
+      clearTimeout(emoteTimers[id]);
+      emoteTimers[id] = setTimeout(() => {
+        updateSprite(catStates.get(id));
+        sprite.gotoAndPlay(1-sprite.currentFrame);
+      }, emote.timer)
     }
+
+    const sounds = player.isDog ? emote.dogSounds : emote.catSounds;
+    const sound = sounds[Math.random() * sounds.length | 0];
+    sound.play();
   }
 
   function updateCamera() {
