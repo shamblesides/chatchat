@@ -16,6 +16,19 @@ const keyMap = {
 settings.SCALE_MODE = SCALE_MODES.NEAREST;
 settings.ROUND_PIXELS = true; // as in rounding sprite position to nearest integer
 
+const SOUNDS_CAT_MEOW = Array(5).fill().map((_,i) => new Audio(`sounds/meow${i+1}.mp3`));
+const SOUNDS_DOG_BARK = Array(5).fill().map((_,i) => new Audio(`sounds/dogbark${i+1}.mp3`));
+const SOUNDS_PIANO = ['c', 'd', 'e', 'f', 'g', 'a', 'b', 'hc'].map(note => new Audio(`sounds/piano${note}.mp3`));
+const SOUND_BROADCAST = new Audio('sounds/broadcast.mp3')
+const SOUND_CAT_NAP = new Audio('sounds/catnap.mp3')
+const SOUND_CAT_PURR = new Audio('sounds/catpurr.mp3')
+const SOUND_CAT_SCREECH = new Audio('sounds/catscreech.mp3')
+const SOUND_DOG_HOWL = new Audio('sounds/doghowl.mp3')
+const SOUND_DOG_NAP = new Audio('sounds/dognap.mp3')
+const SOUND_DOG_PANT = new Audio('sounds/dogpant.mp3')
+const SOUND_HELP = new Audio('sounds/help.mp3')
+const SOUND_MOUSE = new Audio('sounds/mouse.mp3')
+
 texturesReady.then(() => {
   document.querySelector('#loader').innerText = 'Connecting...'
 
@@ -82,18 +95,15 @@ texturesReady.then(() => {
   }
 
   const EMOTES = new Map([
-    ['/meow', { offset: 8, timer: 3000, cat: true, catSounds: ['meow1', 'meow2', 'meow3', 'meow4', 'meow5'] }],
-    ['/purr', { offset: 10, timer: 3000, cat: true, catSounds: ['catpurr'] }],
-    ['/screech', { offset: 14, timer: 3000, cat: true, catSounds: ['catscreech'] }],
-    ['/bark', { offset: 8, timer: 3000, dog: true, dogSounds: ['dogbark1', 'dogbark2', 'dogbark3', 'dogbark4', 'dogbark5'] }],
-    ['/pant', { offset: 10, timer: 3000, dog: true, dogSounds: ['dogpant'] }],
-    ['/howl', { offset: 14, timer: 3000, dog: true, dogSounds: ['doghowl'] }],
-    ['/nap', { offset: 12, catSounds: ['catnap'], dogSounds: ['dognap'] }],
+    ['/meow', { offset: 8, timer: 3000, cat: true, catSounds: SOUNDS_CAT_MEOW }],
+    ['/purr', { offset: 10, timer: 3000, cat: true, catSounds: [SOUND_CAT_PURR] }],
+    ['/screech', { offset: 14, timer: 3000, cat: true, catSounds: [SOUND_CAT_SCREECH] }],
+    ['/bark', { offset: 8, timer: 3000, dog: true, dogSounds: SOUNDS_DOG_BARK }],
+    ['/pant', { offset: 10, timer: 3000, dog: true, dogSounds: [SOUND_DOG_PANT] }],
+    ['/howl', { offset: 14, timer: 3000, dog: true, dogSounds: [SOUND_DOG_HOWL] }],
+    ['/nap', { offset: 12, catSounds: [SOUND_CAT_NAP], dogSounds: [SOUND_DOG_NAP] }],
   ]);
-  EMOTES.forEach(e => {
-    if (e.catSounds) e.catSounds = e.catSounds.map(name => new Audio(`sounds/${name}.mp3`));
-    if (e.dogSounds) e.dogSounds = e.dogSounds.map(name => new Audio(`sounds/${name}.mp3`));
-  });
+
   const emoteTimers = {};
   function applyMessageToSprite(id, message) {
     console.log(id, message)
