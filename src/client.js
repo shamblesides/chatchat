@@ -36,6 +36,7 @@ function logMessage(text) {
   const p = document.createElement('p');
   p.innerText = text;
   document.querySelector('#inner').appendChild(p);
+  setTimeout(() => document.querySelector('#inner').scrollBy(0, p.clientHeight))
 }
 
 texturesReady.then(() => {
