@@ -1,6 +1,6 @@
 import { settings, SCALE_MODES, Application, Sprite, Container, Ticker, AnimatedSprite } from './pixi.js';
 import { ready, spriteTextures, tileTextures } from './textures.js';
-import { LEFT, DOWN, UP, RIGHT, DX, DY, Player, deserializePlayer } from './stuff.js'
+import { LEFT, DOWN, UP, RIGHT, DX, DY, Player, deserializePlayer } from './model.js'
 import { MAP_TILES } from './map.js';
 
 const SCRW = 16 * 10;

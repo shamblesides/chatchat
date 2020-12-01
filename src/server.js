@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { Player } from './stuff.js'
+import { Player } from './model.js'
 
 const wss = new WebSocket.Server({ port: 12000 })
 
