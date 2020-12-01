@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ws": "^7.4.0"
+  },
+  "scripts": {
+    "start": "node www/server.js"
+  }
+}
