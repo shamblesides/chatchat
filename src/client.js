@@ -105,8 +105,14 @@ texturesReady.then(() => {
       world.addChild(sprite)
       catSprites.set(player.id, sprite)
     }
-    sprite.x = player.x * 16;
-    sprite.y = player.y * 16;
+    const newX = player.x * 16;
+    const newY = player.y * 16;
+    if (sprite.x !== newX || sprite.y !== newY) {
+      sprite.x = player.x * 16;
+      sprite.y = player.y * 16;
+      const pianoKey = MAP_TILES[player.y][player.x] - 83;
+      if (SOUNDS_PIANO[pianoKey]) SOUNDS_PIANO[pianoKey].play();
+    }
     const spriteOffset = player.color * 20 + (player.isNapping ? 12 : (player.facing * 2))
     sprite.textures[0] = spriteTextures[spriteOffset]
     sprite.textures[1] = spriteTextures[spriteOffset + 1]
