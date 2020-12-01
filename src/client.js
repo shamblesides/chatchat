@@ -68,6 +68,15 @@ texturesReady.then(() => {
     });
   });
 
+  const mouse = new AnimatedSprite([180, 200, 181, 201].map(n => tileTextures[n]));
+  mouse.animationSpeed = 1/32;
+  mouse.play();
+  world.addChild(mouse);
+  function placeMouse(x, y) {
+    mouse.x = x * 16;
+    mouse.y = y * 16;
+  }
+
   const me = new Player(999);
 
   const catStates = new Map();
@@ -177,9 +186,15 @@ texturesReady.then(() => {
     } else {
       const split = ev.data.indexOf(' ');
       const msg = ev.data.slice(split + 1);
-      const id = parseInt(ev.data) // ok because it goes up to the ' '
-      console.log(id, msg);
-      applyMessageToSprite(id, msg)
+      const type = ev.data.slice(0, split);
+      if (type === 'mouse') {
+        const [x,y] = JSON.parse(msg);
+        placeMouse(x,y);
+      } else {
+        const id = parseInt(type);
+        console.log(id, msg);
+        applyMessageToSprite(id, msg)
+      }
     }
   }
   ws.onclose = function(ev) {
