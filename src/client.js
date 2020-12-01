@@ -102,7 +102,7 @@ ready.then(() => {
 
   let myID = null;
 
-  const wsURL = 'ws://localhost:12000'
+  const wsURL = location.protocol === 'https:' ? 'wss://chatchatgame.herokuapp.com' : 'ws://localhost:12000'
   const ws = new WebSocket(wsURL);
   ws.binaryType = 'arraybuffer';
 
