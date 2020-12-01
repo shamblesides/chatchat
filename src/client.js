@@ -1,7 +1,8 @@
-import { settings, SCALE_MODES, Application, Sprite, Container, Ticker, AnimatedSprite } from './pixi.js';
+import { settings, SCALE_MODES, Application, Sprite, Container, Ticker, AnimatedSprite, PlaneGeometry } from './pixi.js';
 import { ready as texturesReady, spriteTextures, tileTextures } from './textures.js';
-import { LEFT, DOWN, UP, RIGHT, DX, DY, Player, deserializePlayer } from './model.js'
+import { LEFT, DOWN, UP, RIGHT, DX, DY, Player, deserializePlayer, isWall } from './model.js'
 import { MAP_TILES } from './map.js';
+import { Graph, astar } from './astar.js';
 
 const SCRW = 16 * 10;
 const SCRH = 16 * 6;
@@ -12,6 +13,8 @@ const keyMap = {
   ArrowLeft: LEFT,
   ArrowUp: UP,
 };
+
+const myGraph = new Graph(MAP_TILES.map(row => row.map(tile => isWall(tile) ? 0 : 1)))
 
 settings.SCALE_MODE = SCALE_MODES.NEAREST;
 settings.ROUND_PIXELS = true; // as in rounding sprite position to nearest integer
@@ -248,6 +251,44 @@ texturesReady.then(() => {
         if (e2.key === e.key) clearInterval(handle);
       })
       doMove(direction);
+    })
+
+    const canvas = document.querySelector('canvas')
+    canvas.addEventListener('click', ev => handleTap(ev));
+    canvas.addEventListener('touchstart', ev => handleTap(ev.changedTouches[0]));
+    function handleTap(ev) {
+      clearInterval(currentHandle);
+      const x = ((ev.clientX - canvas.offsetLeft) * canvas.width / canvas.clientWidth - world.x) / 16 | 0
+      const y = ((ev.clientY - canvas.offsetTop) * canvas.height / canvas.clientHeight - world.y) / 16 | 0
+      const start = myGraph.grid[me.y][me.x];
+      const end = myGraph.grid[y][x];
+      const path = astar.search(myGraph, start, end)
+      if (path.length > 0) {
+        // the pathfinding implementation seems to have x and y mixed up but oh well,
+        // this code will just be kind of confusing
+        let prev = {y: me.x, x: me.y}
+        const directions = [];
+        for (const next of path) {
+          const dx = next.x - prev.x
+          const dy = next.y - prev.y
+          console.log(dx, dy)
+          if (Math.abs(dx) + Math.abs(dy) !== 1) throw new Error('pathfind error; invalid direction')
+          else if (dx === -1) directions.push(UP)
+          else if (dx === 1) directions.push(DOWN)
+          else if (dy === -1) directions.push(LEFT)
+          else if (dy === 1) directions.push(RIGHT)
+          prev = next
+        }
+        console.log(prev)
+        if (prev.y % 20 === 19 && directions[directions.length-1] === RIGHT) directions.push(RIGHT)
+        if (prev.x % 12 === 11 && directions[directions.length-1] === DOWN) directions.push(DOWN)
+        if (prev.y % 20 === 0 && directions[directions.length-1] === LEFT) directions.push(LEFT)
+        if (prev.x % 12 === 0 && directions[directions.length-1] === UP) directions.push(UP)
+        currentHandle = setInterval(() => {
+          doMove(directions.shift())
+          if (directions.length === 0) clearInterval(currentHandle)
+        }, 250)
+      }
     })
 
     const input = document.querySelector('input')

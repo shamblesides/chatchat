@@ -19,8 +19,7 @@ export const DY = {
   [LEFT]: 0,
 }
 
-export function isWall(x, y, isDog) {
-  const tile = MAP_TILES[y][x];
+export function isWall(tile, isDog) {
   if (tile >= 180 && tile < 200) {
     const actioncollide = tile - 179;
     console.log(actioncollide)
@@ -57,7 +56,8 @@ export class Player {
   move(direction) {
     const nextX = this.x + DX[direction];
     const nextY = this.y + DY[direction];
-    const collided = isWall(nextX, nextY, this.isDog)
+    const tile = MAP_TILES[nextY][nextX];
+    const collided = isWall(tile, this.isDog)
     if (!collided) {
       this.x = nextX;
       this.y = nextY;
