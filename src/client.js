@@ -279,11 +279,11 @@ texturesReady.then(() => {
           else if (dy === -1) directions.push(LEFT)
           else if (dy === 1) directions.push(RIGHT)
           prev = next
+          if (prev.y % 20 === 19 && directions[directions.length-1] === RIGHT) directions.push(RIGHT)
+          if (prev.x % 12 === 11 && directions[directions.length-1] === DOWN) directions.push(DOWN)
+          if (prev.y % 20 === 0 && directions[directions.length-1] === LEFT) directions.push(LEFT)
+          if (prev.x % 12 === 0 && directions[directions.length-1] === UP) directions.push(UP)
         }
-        if (prev.y % 20 === 19 && directions[directions.length-1] === RIGHT) directions.push(RIGHT)
-        if (prev.x % 12 === 11 && directions[directions.length-1] === DOWN) directions.push(DOWN)
-        if (prev.y % 20 === 0 && directions[directions.length-1] === LEFT) directions.push(LEFT)
-        if (prev.x % 12 === 0 && directions[directions.length-1] === UP) directions.push(UP)
         doMove(directions.shift())
         if (directions.length > 0) {
           currentHandle = setInterval(() => {
