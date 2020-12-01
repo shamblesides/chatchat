@@ -29,6 +29,12 @@ const SOUND_DOG_PANT = new Audio('sounds/dogpant.mp3')
 const SOUND_HELP = new Audio('sounds/help.mp3')
 const SOUND_MOUSE = new Audio('sounds/mouse.mp3')
 
+function logMessage(text) {
+  const p = document.createElement('p');
+  p.innerText = text;
+  document.querySelector('#inner').appendChild(p);
+}
+
 texturesReady.then(() => {
   document.querySelector('#loader').innerText = 'Connecting...'
 
@@ -73,6 +79,7 @@ texturesReady.then(() => {
   mouse.play();
   world.addChild(mouse);
   function placeMouse(x, y) {
+    if (mouse.x > 0) SOUND_MOUSE.play();
     mouse.x = x * 16;
     mouse.y = y * 16;
   }
@@ -115,7 +122,6 @@ texturesReady.then(() => {
 
   const emoteTimers = {};
   function applyMessageToSprite(id, message) {
-    console.log(id, message)
     const emote = EMOTES.get(message)
     if (!emote) return;
 
@@ -151,29 +157,50 @@ texturesReady.then(() => {
   updateSprite(me);
   updateCamera();
 
+  const HELP_MESSAGES = {
+    110: isDog => `Help: You can type "${isDog?'/woof':'/meow'}" to cry for attention!`,
+    111: isDog => `Help: Tired? Try taking a "/nap"!`,
+    112: isDog => `Help: Also try ${isDog?'"/pant"':'"/purr"'} and ${isDog?'"/howl"':'"/screech"'}!`,
+    113: isDog => `Help: Type "/me does thing" to do a thing!`,
+    114: isDog => `Help: This is a peaceful place. No dogs allowed!`,
+  }
+
   function doMove(direction) {
     const packet = new Uint8Array([me.x, me.y, direction]);
     const updated = me.move(direction);
     if (updated) {
       ws.send(packet);
+      const myTile = MAP_TILES[me.y][me.x]
+      if (myTile in HELP_MESSAGES) {
+        SOUND_HELP.play();
+        const text = HELP_MESSAGES[myTile](me.isDog);
+        logMessage(text);
+      }
       updateSprite(me);
       updateCamera();
     }
   }
 
-  let myID = null;
-
   ws.onmessage = function(ev) {
     if (ev.data instanceof ArrayBuffer) {
       const arr = new DataView(ev.data);
       if (arr.byteLength === 1) {
-        myID = arr.getUint8(0);
+        const state = catStates.get(me.id);
+        const sprite = catSprites.get(me.id);
+        catStates.delete(me.id)
+        catSprites.delete(me.id)
+        me.id = arr.getUint8(0);
+        catStates.set(me.id, state)
+        catSprites.set(me.id, sprite)
       } else {
         for (let offset = 0; offset < arr.byteLength; offset += 4) {
-          const parsed = deserializePlayer(arr.getInt32(0, false));
-          console.log(parsed.id, parsed.x, parsed.y)
-          if (parsed.id === myID) continue;
-          if (!parsed.x && !parsed.y) {
+          const parsed = deserializePlayer(arr.getInt32(offset, false));
+          if (parsed.id === me.id) {
+            if (me.color !== parsed.color) {
+              me.color = parsed.color;
+              updateSprite(me)
+            }
+          } else if (!parsed.x && !parsed.y) {
             const sprite = catSprites.get(parsed.id);
             world.removeChild(sprite)
             sprite.destroy();
@@ -192,7 +219,7 @@ texturesReady.then(() => {
         placeMouse(x,y);
       } else {
         const id = parseInt(type);
-        console.log(id, msg);
+        logMessage(`${id}: ${msg}`)
         applyMessageToSprite(id, msg)
       }
     }

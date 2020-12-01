@@ -38,7 +38,7 @@ export class Player {
     this.x = x;
     this.y = y;
     this.color = this.id % 10;
-    this.facing = 0;
+    this.facing = 2;
     this.isNapping = false;
     this.isDog = false;
   }

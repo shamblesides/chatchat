@@ -70,7 +70,7 @@ wss.on('connection', function connection(ws, request) {
         ws.close(4400, err.message)
       }
     } else {
-      broadcast(`${player.id} ${data}`);
+      broadcastAndMe(`${player.id} ${data}`);
       player.applyChatMessage(data);
     }
   })
