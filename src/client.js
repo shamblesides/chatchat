@@ -39,7 +39,28 @@ function logMessage(text) {
   setTimeout(() => document.querySelector('#inner').scrollBy(0, p.clientHeight))
 }
 
-texturesReady.then(() => {
+document.querySelector('#title button').innerText = 'Click to start'
+document.getElementById('title').onclick = function(evt) {
+  evt.target.querySelector('button').click();
+}
+document.querySelector('#title button').onclick = function(evt) {
+  evt.stopPropagation();
+  document.getElementById('title').style.display = 'none'
+  document.getElementById('name-entry').style.display = ''
+  document.querySelector('#name-entry input').focus();
+}
+document.querySelector('[name=username]').value = `Kitty${Math.random()*10|0}${Math.random()*10|0}`;
+document.querySelector('#name-entry form').onsubmit = function(evt) {
+  evt.preventDefault();
+  const username = evt.target.elements.username.value;
+  document.querySelector('#name-entry').style.display = 'none';
+  enterGame();
+}
+
+async function enterGame() {
+  document.querySelector('#loader').style.display = '';
+  document.querySelector('#chat').style.display = '';
+  await texturesReady;
   document.querySelector('#loader').innerText = 'Connecting...'
 
   const wsURL = location.protocol === 'https:' ? 'wss://chatchatgame.herokuapp.com' : 'ws://localhost:12000'
@@ -246,7 +267,7 @@ texturesReady.then(() => {
     window.addEventListener('keydown', e => {
       const direction = keyMap[e.key];
       if (direction == undefined) {
-        document.querySelector('input').focus();
+        document.querySelector('#chat input').focus();
         return;
       }
       if (e.repeat) return;
@@ -300,7 +321,7 @@ texturesReady.then(() => {
       }
     }
 
-    const input = document.querySelector('input')
+    const input = document.querySelector('#chat input')
     input.onkeypress = e => {
       if (e.key === 'Enter') {
         applyMessageToSprite(me.id, input.value)
@@ -309,4 +330,4 @@ texturesReady.then(() => {
       }
     }
   });
-})
+}

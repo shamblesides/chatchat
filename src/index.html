@@ -12,6 +12,10 @@
   <!-- <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png"> -->
 
   <style>
+    @font-face {
+      font-family: "ChatChat";
+      src: url(graphics/nokiafc22.ttf);
+    }
     html {
       height: 100%;
     }
@@ -22,14 +26,83 @@
       color: white;
       overflow: hidden;
       touch-action: none;
+      font-family: ChatChat;
+      font-smooth: never;
+      -webkit-font-smoothing: none;
+      image-rendering: crisp-edges;
+      image-rendering: pixelated;
+    }
+    p {
+      margin: 0;
+    }
+    .borderbox {
+      display: block;
+      box-sizing: border-box;
+      border: calc(100vmin / 128) solid black;
+      border-image: url(graphics/border.png) 2 stretch;
+      background-color: white;
+      color: black;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-shadow: black calc(100vmin / 64) calc(100vmin / 64);
+      font: inherit;
+      padding: 4px;
+    }
+    #title, #name-entry {
+      background-image: url(graphics/bg1.gif);
+      background-size: calc(100vmin * 2 / 64);
+      width: 100vmin;
+      height: 100vmin;
+      position: relative;
+      margin: auto;
+    }
+    #title h1 {
+      position: absolute;
+      width: 85vmin;
+      height: 18vmin;
+      left: 7.5vmin;
+      top: 20vmin;
+      font-size: 10vmin;
+      text-transform: uppercase;
+    }
+    #title button, #title noscript a {
+      position: absolute;
+      text-transform: uppercase;
+      width: 60vmin;
+      left: 20vmin;
+      top: 47vmin;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    #title footer {
+      position: absolute;
+      width: 85vmin;
+      left: 7.5vmin;
+      bottom: calc(100vmin / 32);
+      text-transform: uppercase;
+    }
+    #name-entry {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #name-entry form {
+      display: flex;
+      flex-direction: column;
+      padding: 2vmin;
+      width: 60vmin;
+    }
+    #name-entry form input {
+      text-align: center;
+      margin-top: 1vmin;
     }
     canvas, #loader {
       display: block;
       width: 100vmin;
       height: 60vmin;
       margin: auto;
-      image-rendering: crisp-edges;
-      image-rendering: pixelated;
       background-color: black;
       display: flex;
       align-items: center;
@@ -42,51 +115,64 @@
       width: 100vmin;
       height: 40vmin;
       margin: auto;
-      border: double calc(100vmin / 64) black;
       background-color: white;
       color: black;
       box-sizing: border-box;
       font-size: 4vmin;
       padding: 1vmin;
+      align-items: stretch;
+      padding: 0;
     }
     #chat #inner {
       flex-grow: 1;
       margin-bottom: 10px;
       overflow-y: scroll;
     }
-    #chat input {
-      flex-shrink: 1;
+    input {
       font: inherit;
       border: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    #chat input {
+      flex-shrink: 1;
       border-top: solid calc(100vmin / 192) black;
-      margin: -1vmin;
-    }
-    #chat p {
-      margin: 0;
-    }
-    noscript a {
-      font-size: 5vmin;
+      /* padding: 1vmin; */
+      /* margin: -1vmin; */
     }
   </style>
 </head>
 
 <body>
+  <div id="title">
+    <h1 class="borderbox">ChatChat</h1>
+    <button class="borderbox" style="display:none;">Loading...</button>
+    <noscript>
+      <a class="borderbox" target="_blank" href="https://www.enable-javascript.com/">
+        Enable JavaScript to play this game
+      </a>
+    </noscript>
+    <footer class="borderbox">
+      <p>Game by Terry Cavanagh</p>
+      <p>Graphics by Hayden Scott-Baron</p>
+      <p>JavaScript port by ClayLoam</p>
+    </footer>
+  </div>
+  <div id="name-entry" style="display: none;">
+    <form class="borderbox">
+      <label for="username">Enter your name:</label>
+      <input type="text" name="username">
+    </form>
+  </div>
   <div id="loader" style="display:none">Loading</div>
   <canvas id="game" style="display:none"></canvas>
-  <div id="chat">
-    <noscript>
-      <p>
-        <a target="_blank" href="https://www.enable-javascript.com/">
-          Enable JavaScript to play this game!
-        </a>
-      </p>
-    </noscript>
+  <div id="chat" class="borderbox" style="display:none;">
     <div id="inner"></div>
     <input type="text" placeholder="Say something" autofocus>
   </div>
 
   <script>
-    document.getElementById('loader').style.display = '';
+    document.querySelector('#title button').style.display = '';
     window.onerror = window.onunhandledrejection = function (err) {
       document.body.innerText = err.reason || err.message || err.toString();
     }
