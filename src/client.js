@@ -41,7 +41,7 @@ function logMessage(text) {
 
 document.querySelector('#title button').innerText = 'Click to start'
 document.getElementById('title').onclick = function(evt) {
-  evt.target.querySelector('button').click();
+  evt.currentTarget.querySelector('button').click();
 }
 document.querySelector('#title button').onclick = function(evt) {
   evt.stopPropagation();
