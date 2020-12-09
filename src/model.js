@@ -31,6 +31,13 @@ export function isWall(tile, isDog) {
   return false;
 }
 
+function playerCollides(me, x, y, others) {
+  for (const o of others) {
+    if (o !== me && o.x === x && o.y === y) return true;
+  }
+  return false;
+}
+
 export class Player {
   constructor(id=0, x=50, y=32) {
     this.id = id;
@@ -53,11 +60,11 @@ export class Player {
   toDeletedInt32() {
     return (this.id << 24);
   }
-  move(direction) {
+  move(direction, otherPlayers) {
     const nextX = this.x + DX[direction];
     const nextY = this.y + DY[direction];
     const tile = MAP_TILES[nextY][nextX];
-    const collided = isWall(tile, this.isDog)
+    const collided = isWall(tile, this.isDog) || playerCollides(this, nextX, nextY, otherPlayers)
     if (!collided) {
       this.x = nextX;
       this.y = nextY;

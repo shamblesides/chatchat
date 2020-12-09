@@ -12,6 +12,12 @@ const players = new Set();
 let mousex = 54;
 let mousey = 41;
 
+function broadcast(packet) {
+  for (const socket of wss.clients) {
+    socket.send(packet)
+  }
+}
+
 wss.on('connection', function connection(ws, request) {
   if (players.size === MAX_PLAYERS) {
     ws.close(4509, "Too many players online")
@@ -20,18 +26,6 @@ wss.on('connection', function connection(ws, request) {
 
   const player = new Player(availableIDs.pop());
   players.add(player);
-
-  function broadcast(packet) {
-    for (const socket of wss.clients) {
-      if (socket !== ws) socket.send(packet)
-    }
-  }
-
-  function broadcastAndMe(packet) {
-    for (const socket of wss.clients) {
-      socket.send(packet)
-    }
-  }
 
   function broadcastSelfToAllPlayers() {
     const buffer = Buffer.alloc(4);
@@ -47,15 +41,17 @@ wss.on('connection', function connection(ws, request) {
         if (data.length !== 3) {
           throw new Error('Buffer should be 3 bytes')
         }
-        if (data[0] !== player.x || data[1] !== player.y) {
-          throw new Error('Player location was wrong')
-        }
         if (data[2] < 0 || data[2] > 3) {
           throw new Error('Invalid direction')
         }
-        const moved = player.move(data[2])
+        if (data[0] !== player.x || data[1] !== player.y) {
+          ws.send('invalid invalid')
+          return;
+        }
+        const moved = player.move(data[2], players)
         if (!moved) {
-          throw new Error('received move that would not make me move')
+          ws.send('invalid invalid')
+          return;
         }
         if (player.x === mousex && player.y === mousey) {
           do {
@@ -63,14 +59,14 @@ wss.on('connection', function connection(ws, request) {
             mousey = 12 + Math.random() * 36 | 0;
           } while (MAP_TILES[mousey][mousex] !== 0)
           console.log(`mouse moved to ${mousex}, ${mousey}`)
-          broadcastAndMe(`mouse [${mousex},${mousey}]`)
+          broadcast(`mouse [${mousex},${mousey}]`)
         }
         broadcastSelfToAllPlayers();
       } catch (err) {
         ws.close(4400, err.message)
       }
     } else {
-      broadcastAndMe(`${player.id} ${data}`);
+      broadcast(`${player.id} ${data}`);
       player.applyChatMessage(data);
     }
   })

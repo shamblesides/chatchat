@@ -196,10 +196,14 @@ async function enterGame() {
     114: isDog => `Help: This is a peaceful place. No dogs allowed!`,
   }
 
+  const lastConfirmedPosition = { x: me.x, y: me.y };
+  const unconfirmedMovements = [];
+
   function doMove(direction) {
     const packet = new Uint8Array([me.x, me.y, direction]);
-    const updated = me.move(direction);
+    const updated = me.move(direction, catStates.values());
     if (updated) {
+      unconfirmedMovements.push({ x: me.x, y: me.y });
       ws.send(packet);
       const myTile = MAP_TILES[me.y][me.x]
       if (myTile in HELP_MESSAGES) {
@@ -218,8 +222,21 @@ async function enterGame() {
       for (let offset = 0; offset < arr.byteLength; offset += 4) {
         const parsed = deserializePlayer(arr.getInt32(offset, false));
         if (parsed.id === me.id) {
+          lastConfirmedPosition.x = parsed.x;
+          lastConfirmedPosition.y = parsed.y;
+          let updated = false;
           if (me.color !== parsed.color) {
             me.color = parsed.color;
+            updated = true;
+          }
+          const expected = unconfirmedMovements.shift();
+          if (expected == null || parsed.x !== expected.x || parsed.y !== expected.y) {
+            me.x = parsed.x;
+            me.y = parsed.y;
+            unconfirmedMovements.splice(0, Infinity);
+            updated = true;
+          }
+          if (updated) {
             updateSprite(me)
           }
         } else if (!parsed.x && !parsed.y) {
@@ -246,6 +263,13 @@ async function enterGame() {
       } else if (type === 'mouse') {
         const [x,y] = JSON.parse(msg);
         placeMouse(x,y);
+      } else if (type === 'invalid') {
+        console.log('oops, rewind')
+        unconfirmedMovements.splice(0, Infinity);
+        me.x = lastConfirmedPosition.x;
+        me.y = lastConfirmedPosition.y;
+        updateSprite(me);
+        updateCamera();
       } else { // message from player
         const id = parseInt(type);
         logMessage(`${id}: ${msg}`)
