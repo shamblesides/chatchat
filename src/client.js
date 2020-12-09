@@ -1,4 +1,4 @@
-import { settings, SCALE_MODES, Application, Sprite, Container, Ticker, AnimatedSprite, PlaneGeometry } from './pixi.js';
+import { settings, SCALE_MODES, Application, Sprite, Container, AnimatedSprite, Graphics, Text } from './pixi.js';
 import { ready as texturesReady, spriteTextures, tileTextures } from './textures.js';
 import { LEFT, DOWN, UP, RIGHT, DX, DY, Player, deserializePlayer, isWall } from './model.js'
 import { MAP_TILES } from './map.js';
@@ -104,10 +104,28 @@ async function enterGame() {
   mouse.play();
   world.addChild(mouse);
   function placeMouse(x, y) {
-    if (mouse.x > 0) SOUND_MOUSE.play();
     mouse.x = x * 16;
     mouse.y = y * 16;
   }
+
+  const hasMouseSprite = new Container();
+  hasMouseSprite.x = 5;
+  hasMouseSprite.y = 85;
+  hasMouseSprite.addChild(new Graphics()
+    .beginFill(0xffffff).drawRect(0,0,45,10).endFill()
+    .beginFill(0x000000).drawRect(1,1,43,8).endFill()
+    .beginFill(0xffffff).drawRect(2,2,41,6).endFill()
+  )
+  hasMouseSprite.addChild(Object.assign(new Sprite(spriteTextures[401]), { x: 2, y: 2 }))
+  hasMouseSprite.addChild(Object.assign(new Text('has mouse!', { fontFamily:'ChatChat', fontSize: 8 }), { x: 18, y: 2 }));
+  hasMouseSprite.visible = false
+  application.stage.addChild(hasMouseSprite);
+
+  const deadMouse = new Sprite(spriteTextures[402])
+  deadMouse.x = 16 * 49.5;
+  deadMouse.y = 16 * 30.5 - 4;
+  deadMouse.visible = false;
+  world.addChild(deadMouse);
 
   const me = new Player(999);
 
@@ -263,6 +281,20 @@ async function enterGame() {
       } else if (type === 'mouse') {
         const [x,y] = JSON.parse(msg);
         placeMouse(x,y);
+      } else if (type === 'hasmouse') {
+        const hasmouse = msg === 'true';
+        if (hasmouse) SOUND_MOUSE.play();
+        hasMouseSprite.visible = hasmouse;
+      } else if (type === 'score') {
+        const { id, score, cat } = JSON.parse(msg);
+        if (id === me.id) {
+          console.log({ score })
+          SOUNDS_CAT_MEOW[0].play()
+        }
+        if (cat) {
+          deadMouse.visible = true;
+          setTimeout(() => deadMouse.visible = false, 5000)
+        }
       } else if (type === 'invalid') {
         console.log('oops, rewind')
         unconfirmedMovements.splice(0, Infinity);

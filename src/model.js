@@ -74,6 +74,14 @@ export class Player {
     this.isNapping = false;
     return updated;
   }
+  isAtDoorstep() {
+    const {x,y} = this;
+    return x >= 48 && y >= 30 && x <= 51 && y <= 31;
+  }
+  isAtDogAltar() {
+    const {x,y} = this;
+    return (x == 73 && y == 6) || (x == 74 && y == 6);
+  }
   applyChatMessage(str) {
     if (str === '/nap') {
       this.isNapping = true;

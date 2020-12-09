@@ -8,6 +8,8 @@ const MAX_PLAYERS = 256;
 const availableIDs = Array(MAX_PLAYERS).fill().map((_,i) => i);
 
 const players = new Set();
+const hasMouse = {};
+const scores = {};
 
 let mousex = 54;
 let mousey = 41;
@@ -26,6 +28,8 @@ wss.on('connection', function connection(ws, request) {
 
   const player = new Player(availableIDs.pop());
   players.add(player);
+  hasMouse[player.id] = false;
+  scores[player.id] = 0;
 
   function broadcastSelfToAllPlayers() {
     const buffer = Buffer.alloc(4);
@@ -53,13 +57,20 @@ wss.on('connection', function connection(ws, request) {
           ws.send('invalid invalid')
           return;
         }
-        if (player.x === mousex && player.y === mousey) {
+        if (player.x === mousex && player.y === mousey && !hasMouse[player.id]) {
           do {
             mousex = 20 + Math.random() * 60 | 0;
             mousey = 12 + Math.random() * 36 | 0;
           } while (MAP_TILES[mousey][mousex] !== 0)
           console.log(`mouse moved to ${mousex}, ${mousey}`)
           broadcast(`mouse [${mousex},${mousey}]`)
+          hasMouse[player.id] = true;
+          ws.send('hasmouse true')
+        } else if (player.isAtDoorstep() && hasMouse[player.id]) {
+          hasMouse[player.id] = false;
+          scores[player.id]++;
+          ws.send('hasmouse false')
+          broadcast(`score {"id":${player.id},"score":${scores[player.id]},"cat":true}`)
         }
         broadcastSelfToAllPlayers();
       } catch (err) {
