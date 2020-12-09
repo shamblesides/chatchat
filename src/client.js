@@ -4,8 +4,8 @@ import { LEFT, DOWN, UP, RIGHT, DX, DY, Player, deserializePlayer, isWall } from
 import { MAP_TILES } from './map.js';
 import { Graph, astar } from './astar.js';
 
-const SCRW = 16 * 10;
-const SCRH = 16 * 6;
+const SCRW = 16 * 10 * 2;
+const SCRH = 16 * 6 * 2;
 
 const keyMap = {
   ArrowRight: RIGHT,
@@ -93,37 +93,40 @@ async function enterGame() {
   MAP_TILES.forEach((row, y) => {
     row.forEach((tile, x) => {
       const spr = new Sprite(tileTextures[tile]);
-      spr.x = x * 16;
-      spr.y = y * 16;
+      spr.x = x * 16 * 2;
+      spr.y = y * 16 * 2;
+      spr.scale.set(2, 2)
       tilemap.addChild(spr);
     });
   });
 
   const mouse = new AnimatedSprite([180, 200, 181, 201].map(n => tileTextures[n]));
+  mouse.scale.set(2,2)
   mouse.animationSpeed = 1/32;
   mouse.play();
   world.addChild(mouse);
   function placeMouse(x, y) {
-    mouse.x = x * 16;
-    mouse.y = y * 16;
+    mouse.x = x * 16 * 2;
+    mouse.y = y * 16 * 2;
   }
 
   const hasMouseSprite = new Container();
-  hasMouseSprite.x = 5;
-  hasMouseSprite.y = 85;
+  hasMouseSprite.x = 10;
+  hasMouseSprite.y = 170;
   hasMouseSprite.addChild(new Graphics()
-    .beginFill(0xffffff).drawRect(0,0,45,10).endFill()
-    .beginFill(0x000000).drawRect(1,1,43,8).endFill()
-    .beginFill(0xffffff).drawRect(2,2,41,6).endFill()
+    .beginFill(0xffffff).drawRect(0,0,90,20).endFill()
+    .beginFill(0x000000).drawRect(1,1,88,18).endFill()
+    .beginFill(0xffffff).drawRect(2,2,86,16).endFill()
   )
   hasMouseSprite.addChild(Object.assign(new Sprite(spriteTextures[401]), { x: 2, y: 2 }))
-  hasMouseSprite.addChild(Object.assign(new Text('has mouse!', { fontFamily:'ChatChat', fontSize: 8 }), { x: 18, y: 2 }));
+  hasMouseSprite.addChild(Object.assign(new Text('has mouse!', { fontFamily:'ChatChat', fontSize: 8 }), { x: 24, y: 6 }));
   hasMouseSprite.visible = false
   application.stage.addChild(hasMouseSprite);
 
   const deadMouse = new Sprite(spriteTextures[402])
-  deadMouse.x = 16 * 49.5;
-  deadMouse.y = 16 * 30.5 - 4;
+  deadMouse.x = 16 * 49.5 * 2;
+  deadMouse.y = 16 * 30.25 * 2;
+  deadMouse.scale.set(2,2)
   deadMouse.visible = false;
   world.addChild(deadMouse);
 
@@ -139,16 +142,17 @@ async function enterGame() {
       sprite = catSprites.get(player.id)
     } else {
       sprite = new AnimatedSprite([spriteTextures[0], spriteTextures[1]]);
+      sprite.scale.set(2,2)
       sprite.animationSpeed = 1/32;
       sprite.play();
       world.addChild(sprite)
       catSprites.set(player.id, sprite)
     }
-    const newX = player.x * 16;
-    const newY = player.y * 16;
+    const newX = player.x * 16 * 2;
+    const newY = player.y * 16 * 2;
     if (sprite.x !== newX || sprite.y !== newY) {
-      sprite.x = player.x * 16;
-      sprite.y = player.y * 16;
+      sprite.x = newX
+      sprite.y = newY
       const pianoKey = MAP_TILES[player.y][player.x] - 83;
       if (SOUNDS_PIANO[pianoKey]) SOUNDS_PIANO[pianoKey].play();
     }
@@ -200,8 +204,8 @@ async function enterGame() {
   function updateCamera() {
     const cameraX = Math.max(5, Math.min(20-5-1, me.x % 20)) + Math.floor(me.x/20)*20;
     const cameraY = Math.max(3, Math.min(12-3-1, me.y % 12)) + Math.floor(me.y/12)*12;
-    world.x = -(cameraX * 16) + SCRW/2 - 8;
-    world.y = -(cameraY * 16) + SCRH/2 - 8;
+    world.x = -((cameraX + .5) * 16 * 2) + SCRW/2;
+    world.y = -((cameraY + .5) * 16 * 2) + SCRH/2;
   }
   updateSprite(me);
   updateCamera();
@@ -340,8 +344,8 @@ async function enterGame() {
     canvas.addEventListener('touchstart', ev => handleTap(ev.changedTouches[0]));
     function handleTap(ev) {
       clearInterval(currentHandle);
-      const x = ((ev.clientX - canvas.offsetLeft) * canvas.width / canvas.clientWidth - world.x) / 16 | 0
-      const y = ((ev.clientY - canvas.offsetTop) * canvas.height / canvas.clientHeight - world.y) / 16 | 0
+      const x = ((ev.clientX - canvas.offsetLeft) * canvas.width / canvas.clientWidth - world.x) / (16 * 2) | 0
+      const y = ((ev.clientY - canvas.offsetTop) * canvas.height / canvas.clientHeight - world.y) / (16 * 2) | 0
       const start = myGraph.grid[me.y][me.x];
       const end = myGraph.grid[y][x];
       const path = astar.search(myGraph, start, end)
