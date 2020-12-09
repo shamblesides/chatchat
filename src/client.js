@@ -215,40 +215,38 @@ async function enterGame() {
   ws.onmessage = function(ev) {
     if (ev.data instanceof ArrayBuffer) {
       const arr = new DataView(ev.data);
-      if (arr.byteLength === 1) {
-        const state = catStates.get(me.id);
-        const sprite = catSprites.get(me.id);
-        catStates.delete(me.id)
-        catSprites.delete(me.id)
-        me.id = arr.getUint8(0);
-        catStates.set(me.id, state)
-        catSprites.set(me.id, sprite)
-      } else {
-        for (let offset = 0; offset < arr.byteLength; offset += 4) {
-          const parsed = deserializePlayer(arr.getInt32(offset, false));
-          if (parsed.id === me.id) {
-            if (me.color !== parsed.color) {
-              me.color = parsed.color;
-              updateSprite(me)
-            }
-          } else if (!parsed.x && !parsed.y) {
-            const sprite = catSprites.get(parsed.id);
-            world.removeChild(sprite)
-            sprite.destroy();
-            catSprites.delete(parsed.id);
-          } else {
-            updateSprite(parsed);
+      for (let offset = 0; offset < arr.byteLength; offset += 4) {
+        const parsed = deserializePlayer(arr.getInt32(offset, false));
+        if (parsed.id === me.id) {
+          if (me.color !== parsed.color) {
+            me.color = parsed.color;
+            updateSprite(me)
           }
+        } else if (!parsed.x && !parsed.y) {
+          const sprite = catSprites.get(parsed.id);
+          world.removeChild(sprite)
+          sprite.destroy();
+          catSprites.delete(parsed.id);
+        } else {
+          updateSprite(parsed);
         }
       }
     } else {
       const split = ev.data.indexOf(' ');
       const msg = ev.data.slice(split + 1);
       const type = ev.data.slice(0, split);
-      if (type === 'mouse') {
+      if (type === 'id') {
+        const state = catStates.get(me.id);
+        const sprite = catSprites.get(me.id);
+        catStates.delete(me.id)
+        catSprites.delete(me.id)
+        me.id = +msg;
+        catStates.set(me.id, state)
+        catSprites.set(me.id, sprite)
+      } else if (type === 'mouse') {
         const [x,y] = JSON.parse(msg);
         placeMouse(x,y);
-      } else {
+      } else { // message from player
         const id = parseInt(type);
         logMessage(`${id}: ${msg}`)
         applyMessageToSprite(id, msg)

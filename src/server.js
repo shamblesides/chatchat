@@ -89,7 +89,7 @@ wss.on('connection', function connection(ws, request) {
   for (let i = 0, playerIterator = players.values(); i < players.size; ++i) {
     firstPayload.writeInt32BE(playerIterator.next().value.toInt32(), i * 4);
   }
-  ws.send(new Uint8Array([player.id]))
+  ws.send(`id ${player.id}`)
   ws.send(firstPayload)
   ws.send(`mouse [${mousex},${mousey}]`)
 
