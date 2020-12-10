@@ -148,7 +148,7 @@ async function enterGame(myUsername) {
 
   const catStates = new Map();
   const catSprites = new Map();
-  const names = {};
+  const names = { 999: myUsername };
 
   function updateSprite(player) {
     catStates.set(player.id, player);
@@ -156,18 +156,26 @@ async function enterGame(myUsername) {
     if (catSprites.get(player.id)) {
       sprite = catSprites.get(player.id)
     } else {
+      const container = new Container();
       sprite = new AnimatedSprite([spriteTextures[0], spriteTextures[1]]);
       sprite.scale.set(2,2)
       sprite.animationSpeed = 1/32;
       sprite.play();
-      world.addChild(sprite)
+      container.addChild(sprite);
       catSprites.set(player.id, sprite)
+
+      const text = new Text(names[player.id], { fontFamily:'ChatChat', fontSize: 8, fill: 'white' })
+      text.x = 16 - text.width / 2;
+      text.y = 32;
+      container.addChild(text);
+
+      world.addChild(container)
     }
     const newX = player.x * 16 * 2;
     const newY = player.y * 16 * 2;
-    if (sprite.x !== newX || sprite.y !== newY) {
-      sprite.x = newX
-      sprite.y = newY
+    if (sprite.parent.x !== newX || sprite.parent.y !== newY) {
+      sprite.parent.x = newX
+      sprite.parent.y = newY
       const pianoKey = MAP_TILES[player.y][player.x] - 83;
       if (SOUNDS_PIANO[pianoKey]) SOUNDS_PIANO[pianoKey].play();
     }
@@ -278,7 +286,7 @@ async function enterGame(myUsername) {
           }
         } else if (!parsed.x && !parsed.y) {
           const sprite = catSprites.get(parsed.id);
-          world.removeChild(sprite)
+          world.removeChild(sprite.parent)
           sprite.destroy();
           catSprites.delete(parsed.id);
         } else {
