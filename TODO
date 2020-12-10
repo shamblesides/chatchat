@@ -1,8 +1,8 @@
 Make chat be local to specific areas of the map
 Entered/exited room messages
 Fix timing for animations and movement
-Show score in chat
-Dog altar
+Announce "has mouse", "already has mouse", and "scored"
+Dog altar (and "___ is a dog now")
 Tag, and temporary freezing when tagged
 Anti-spam
 Room listing
