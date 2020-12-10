@@ -68,17 +68,17 @@ document.querySelector('#name-entry form').onsubmit = function(evt) {
   evt.preventDefault();
   const username = evt.target.elements.username.value;
   document.querySelector('#name-entry').style.display = 'none';
-  enterGame();
+  enterGame(username);
 }
 
-async function enterGame() {
+async function enterGame(myUsername) {
   document.querySelector('#loader').style.display = '';
   document.querySelector('#chat').style.display = '';
   await texturesReady;
   document.querySelector('#loader').innerText = 'Connecting...'
 
   const wsURL = location.protocol === 'https:' ? 'wss://chatchatgame.herokuapp.com' : 'ws://localhost:12000'
-  const ws = new WebSocket(wsURL);
+  const ws = new WebSocket(`${wsURL}/?name=${myUsername}`);
   ws.binaryType = 'arraybuffer';
 
   const wsOpen = new Promise(done => {
@@ -148,6 +148,7 @@ async function enterGame() {
 
   const catStates = new Map();
   const catSprites = new Map();
+  const names = {};
 
   function updateSprite(player) {
     catStates.set(player.id, player);
@@ -296,6 +297,9 @@ async function enterGame() {
         me.id = +msg;
         catStates.set(me.id, state)
         catSprites.set(me.id, sprite)
+      } else if (type === 'names') {
+        const newNames = JSON.parse(msg);
+        Object.assign(names, newNames);
       } else if (type === 'mouse') {
         const [x,y] = JSON.parse(msg);
         placeMouse(x,y);
@@ -328,7 +332,7 @@ async function enterGame() {
       } else { // message from player
         const id = parseInt(type);
         const nameEl = document.createElement('span');
-        nameEl.innerText = id + ':';
+        nameEl.innerText = names[id] + ':';
         nameEl.style.color = playerColors[catStates.get(id).color]
         logMessage(msg, p => {
           p.prepend(nameEl, ' ')

@@ -1,4 +1,5 @@
 import WebSocket from 'ws';
+import { decode } from 'querystring';
 import { Player } from './model.js'
 import { MAP_TILES } from './map.js';
 
@@ -30,6 +31,15 @@ const padMessages = {
 }
 
 wss.on('connection', function connection(ws, request) {
+  const name = new URL(request.url, 'https://example.org').searchParams.get('name');
+  if (!name) {
+    ws.close(4400, 'missing name');
+    return;
+  }
+  if (!name.match(/^\w+$/g)) {
+    ws.close(4400, 'invalid name');
+    return;
+  }
   if (players.size === MAX_PLAYERS) {
     ws.close(4509, "Too many players online")
     return;
@@ -39,7 +49,7 @@ wss.on('connection', function connection(ws, request) {
   players.add(player);
   hasMouse[player.id] = false;
   scores[player.id] = 0;
-  names[player.id] = 'Someone'
+  names[player.id] = name;
 
   function broadcastSelfToAllPlayers() {
     const buffer = Buffer.alloc(4);
@@ -110,9 +120,11 @@ wss.on('connection', function connection(ws, request) {
     firstPayload.writeInt32BE(playerIterator.next().value.toInt32(), i * 4);
   }
   ws.send(`id ${player.id}`)
+  ws.send(`names ${JSON.stringify(names)}`);
   ws.send(firstPayload)
   ws.send(`mouse [${mousex},${mousey}]`)
   broadcast(`join-message [ ${names[player.id].toLocaleUpperCase()} ENTERED THE GAME ]`)
+  broadcast(`names ${JSON.stringify({ [player.id]: name })}`);
 
   const buffer = Buffer.alloc(4);
   buffer.writeInt32BE(player.toInt32())
