@@ -10,6 +10,7 @@ const availableIDs = Array(MAX_PLAYERS).fill().map((_,i) => i);
 const players = new Set();
 const hasMouse = {};
 const scores = {};
+const names = {};
 
 let mousex = 54;
 let mousey = 41;
@@ -18,6 +19,14 @@ function broadcast(packet) {
   for (const socket of wss.clients) {
     socket.send(packet)
   }
+}
+
+const padMessages = {
+  100: isDog => isDog ? 'Woof Woof Woof!' : "I'm in the mush room!",
+  101: isDog => isDog ? 'Woof Woof Woof!' : "I'm by the fountain!",
+  102: isDog => isDog ? 'Woof Woof Woof!' : "I found treasure!",
+  103: isDog => isDog ? 'Woof Woof Woof!' : "Meet me in the alley!",
+  104: isDog => isDog ? 'Woof! Woof Woof Woof!' : "Meow Meow Meow!",
 }
 
 wss.on('connection', function connection(ws, request) {
@@ -30,6 +39,7 @@ wss.on('connection', function connection(ws, request) {
   players.add(player);
   hasMouse[player.id] = false;
   scores[player.id] = 0;
+  names[player.id] = 'Someone'
 
   function broadcastSelfToAllPlayers() {
     const buffer = Buffer.alloc(4);
@@ -57,6 +67,7 @@ wss.on('connection', function connection(ws, request) {
           ws.send('invalid invalid')
           return;
         }
+        const tileAt = MAP_TILES[player.y][player.x];
         if (player.x === mousex && player.y === mousey && !hasMouse[player.id]) {
           do {
             mousex = 20 + Math.random() * 60 | 0;
@@ -71,6 +82,9 @@ wss.on('connection', function connection(ws, request) {
           scores[player.id]++;
           ws.send('hasmouse false')
           broadcast(`score {"id":${player.id},"score":${scores[player.id]},"cat":true}`)
+        } else if (padMessages[tileAt]) {
+          const msg = `-= BROADCAST FROM ${names[player.id].toLocaleUpperCase()}: ${padMessages[tileAt](player.isDog)} =-`
+          broadcast(`pad-message ${msg}`)
         }
         broadcastSelfToAllPlayers();
       } catch (err) {
@@ -87,9 +101,8 @@ wss.on('connection', function connection(ws, request) {
     availableIDs.push(player.id)
     const buffer = Buffer.alloc(4);
     buffer.writeInt32BE(player.toDeletedInt32())
-    for (const socket of wss.clients) {
-      if (socket !== ws) socket.send(buffer)
-    }
+    broadcast(buffer)
+    broadcast(`join-message [ ${names[player.id].toLocaleUpperCase()} LEFT THE GAME ]`)
   });
 
   const firstPayload = Buffer.alloc(players.size * 4)
@@ -99,6 +112,7 @@ wss.on('connection', function connection(ws, request) {
   ws.send(`id ${player.id}`)
   ws.send(firstPayload)
   ws.send(`mouse [${mousex},${mousey}]`)
+  broadcast(`join-message [ ${names[player.id].toLocaleUpperCase()} ENTERED THE GAME ]`)
 
   const buffer = Buffer.alloc(4);
   buffer.writeInt32BE(player.toInt32())

@@ -32,9 +32,10 @@ const SOUND_DOG_PANT = new Audio('sounds/dogpant.mp3')
 const SOUND_HELP = new Audio('sounds/help.mp3')
 const SOUND_MOUSE = new Audio('sounds/mouse.mp3')
 
-function logMessage(text) {
+function logMessage(text, fn) {
   const p = document.createElement('p');
   p.innerText = text;
+  fn(p);
   document.querySelector('#inner').appendChild(p);
   setTimeout(() => document.querySelector('#inner').scrollBy(0, p.clientHeight))
 }
@@ -211,11 +212,11 @@ async function enterGame() {
   updateCamera();
 
   const HELP_MESSAGES = {
-    110: isDog => `Help: You can type "${isDog?'/woof':'/meow'}" to cry for attention!`,
-    111: isDog => `Help: Tired? Try taking a "/nap"!`,
-    112: isDog => `Help: Also try ${isDog?'"/pant"':'"/purr"'} and ${isDog?'"/howl"':'"/screech"'}!`,
-    113: isDog => `Help: Type "/me does thing" to do a thing!`,
-    114: isDog => `Help: This is a peaceful place. No dogs allowed!`,
+    110: isDog => `You can type "${isDog?'/woof':'/meow'}" to cry for attention!`,
+    111: isDog => `Tired? Try taking a "/nap"!`,
+    112: isDog => `Also try ${isDog?'"/pant"':'"/purr"'} and ${isDog?'"/howl"':'"/screech"'}!`,
+    113: isDog => `Type "/me does thing" to do a thing!`,
+    114: isDog => `This is a peaceful place. No dogs allowed!`,
   }
 
   const lastConfirmedPosition = { x: me.x, y: me.y };
@@ -230,8 +231,8 @@ async function enterGame() {
       const myTile = MAP_TILES[me.y][me.x]
       if (myTile in HELP_MESSAGES) {
         SOUND_HELP.play();
-        const text = HELP_MESSAGES[myTile](me.isDog);
-        logMessage(text);
+        const text = `-= Help: ${HELP_MESSAGES[myTile](me.isDog)} =-`;
+        logMessage(text, p => p.classList.add('help-message'));
       }
       updateSprite(me);
       updateCamera();
@@ -306,9 +307,22 @@ async function enterGame() {
         me.y = lastConfirmedPosition.y;
         updateSprite(me);
         updateCamera();
+      } else if (type.endsWith('-message')) {
+        logMessage(msg, p => p.classList.add(type));
+        if (type === 'pad-message') {
+          SOUND_BROADCAST.play();
+        }
       } else { // message from player
         const id = parseInt(type);
-        logMessage(`${id}: ${msg}`)
+        const nameEl = document.createElement('span');
+        nameEl.innerText = id + ':';
+        nameEl.style.color = '#f0f';
+        logMessage(msg, p => {
+          p.prepend(nameEl, ' ')
+          if (id === me.id) {
+            p.classList.add('my-message')
+          }
+        });
         applyMessageToSprite(id, msg)
       }
     }

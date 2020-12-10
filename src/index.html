@@ -26,6 +26,7 @@
       color: white;
       overflow: hidden;
       touch-action: none;
+      font-size: 2.35vmin;
       font-family: ChatChat;
       font-smooth: never;
       -webkit-font-smoothing: none;
@@ -118,7 +119,6 @@
       background-color: white;
       color: black;
       box-sizing: border-box;
-      font-size: 4vmin;
       padding: 1vmin;
       align-items: stretch;
       padding: 0;
@@ -127,6 +127,9 @@
       flex-grow: 1;
       margin-bottom: 10px;
       overflow-y: scroll;
+    }
+    #chat #inner p {
+      padding: 0 calc(100vmin / 192);
     }
     input {
       font: inherit;
@@ -139,6 +142,21 @@
       border-top: solid calc(100vmin / 192) black;
       /* padding: 1vmin; */
       /* margin: -1vmin; */
+    }
+    p.move-message {
+      color: rgb(32,32,196)
+    }
+    p.pad-message {
+      color: rgb(16,84,16)
+    }
+    p.help-message {
+      color: rgb(16,16,84)
+    }
+    p.join-message {
+      color: rgb(32,196,32)
+    }
+    p.my-message {
+      background-color: #e1e1e1;
     }
   </style>
 </head>
