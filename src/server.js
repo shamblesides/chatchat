@@ -101,6 +101,9 @@ wss.on('connection', function connection(ws, request) {
         ws.close(4400, err.message)
       }
     } else {
+      if (data.length > 50) {
+        return;
+      }
       broadcast(`${player.id} ${data}`);
       player.applyChatMessage(data);
     }
