@@ -32,6 +32,19 @@ const SOUND_DOG_PANT = new Audio('sounds/dogpant.mp3')
 const SOUND_HELP = new Audio('sounds/help.mp3')
 const SOUND_MOUSE = new Audio('sounds/mouse.mp3')
 
+const playerColors = [
+  `rgb(143, 180, 42)`,
+  `rgb(215, 120, 53)`,
+  `rgb(54, 139, 230)`,
+  `rgb(215, 120, 53)`,
+  `rgb(135, 135, 135)`,
+  `rgb(159, 38, 52)`,
+  `rgb(165, 206, 230)`,
+  `rgb(196, 98, 118)`,
+  `rgb(137, 91, 33)`,
+  `rgb(54, 139, 230)`,
+];
+
 function logMessage(text, fn) {
   const p = document.createElement('p');
   p.innerText = text;
@@ -316,7 +329,7 @@ async function enterGame() {
         const id = parseInt(type);
         const nameEl = document.createElement('span');
         nameEl.innerText = id + ':';
-        nameEl.style.color = '#f0f';
+        nameEl.style.color = playerColors[catStates.get(id).color]
         logMessage(msg, p => {
           p.prepend(nameEl, ' ')
           if (id === me.id) {
