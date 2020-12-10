@@ -187,13 +187,13 @@ async function enterGame(myUsername) {
   }
 
   const EMOTES = new Map([
-    ['/meow', { offset: 8, timer: 3000, cat: true, catSounds: SOUNDS_CAT_MEOW }],
-    ['/purr', { offset: 10, timer: 3000, cat: true, catSounds: [SOUND_CAT_PURR] }],
-    ['/screech', { offset: 14, timer: 3000, cat: true, catSounds: [SOUND_CAT_SCREECH] }],
-    ['/bark', { offset: 8, timer: 3000, dog: true, dogSounds: SOUNDS_DOG_BARK }],
-    ['/pant', { offset: 10, timer: 3000, dog: true, dogSounds: [SOUND_DOG_PANT] }],
-    ['/howl', { offset: 14, timer: 3000, dog: true, dogSounds: [SOUND_DOG_HOWL] }],
-    ['/nap', { offset: 12, catSounds: [SOUND_CAT_NAP], dogSounds: [SOUND_DOG_NAP] }],
+    ['/meow', { offset: 8, timer: 3000, cat: true, catSounds: SOUNDS_CAT_MEOW, does: 'meows' }],
+    ['/purr', { offset: 10, timer: 3000, cat: true, catSounds: [SOUND_CAT_PURR], does: 'purrs'  }],
+    ['/screech', { offset: 14, timer: 3000, cat: true, catSounds: [SOUND_CAT_SCREECH], does: 'screeches' }],
+    ['/bark', { offset: 8, timer: 3000, dog: true, dogSounds: SOUNDS_DOG_BARK, does: 'barks' }],
+    ['/pant', { offset: 10, timer: 3000, dog: true, dogSounds: [SOUND_DOG_PANT], does: 'pants' }],
+    ['/howl', { offset: 14, timer: 3000, dog: true, dogSounds: [SOUND_DOG_HOWL], does: 'howls' }],
+    ['/nap', { offset: 12, catSounds: [SOUND_CAT_NAP], dogSounds: [SOUND_DOG_NAP], does: 'takes a nap' }],
   ]);
 
   const emoteTimers = {};
@@ -339,16 +339,31 @@ async function enterGame(myUsername) {
         }
       } else { // message from player
         const id = parseInt(type);
-        const nameEl = document.createElement('span');
-        nameEl.innerText = names[id] + ':';
-        nameEl.style.color = playerColors[catStates.get(id).color]
-        logMessage(msg, p => {
-          p.prepend(nameEl, ' ')
-          if (id === me.id) {
-            p.classList.add('my-message')
+        const color = playerColors[catStates.get(id).color];
+        if (msg.startsWith('/me ')) {
+          const text = names[id] + msg.slice(3)
+          logMessage(text, p => p.style.color = color);
+        } else {
+          let emote = null
+          for (const [cmd, e] of EMOTES.entries()) {
+            if (msg === cmd) emote = e;
           }
-        });
-        applyMessageToSprite(id, msg)
+          if (emote && ((me.isDog && !emote.cat) || (!me.isDog && !emote.dog))) {
+            const words = `${names[id]} ${emote.does}`;
+            logMessage(words, p => p.style.color = color)
+            applyMessageToSprite(id, msg)
+          } else {
+            const nameEl = document.createElement('span');
+            nameEl.innerText = names[id] + ':';
+            nameEl.style.color = color;
+            logMessage(msg, p => {
+              p.prepend(nameEl, ' ')
+              if (id === me.id) {
+                p.classList.add('my-message')
+              }
+            });
+          }
+        }
       }
     }
   }
