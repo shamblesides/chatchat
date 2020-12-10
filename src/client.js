@@ -356,7 +356,10 @@ async function enterGame(myUsername) {
             const nameEl = document.createElement('span');
             nameEl.innerText = names[id] + ':';
             nameEl.style.color = color;
-            logMessage(msg, p => {
+            const text = me.isDog
+              ? 'woof '.repeat([2,3,3,4][Math.random()*4|0]).trim()
+              : msg
+            logMessage(text, p => {
               p.prepend(nameEl, ' ')
               if (id === me.id) {
                 p.classList.add('my-message')
