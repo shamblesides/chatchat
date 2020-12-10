@@ -36,7 +36,7 @@ wss.on('connection', function connection(ws, request) {
     ws.close(4400, 'missing name');
     return;
   }
-  if (!name.match(/^\w+$/g)) {
+  if (!name.match(/^\w{1,16}$/g)) {
     ws.close(4400, 'invalid name');
     return;
   }
