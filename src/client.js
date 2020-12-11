@@ -438,7 +438,7 @@ async function enterGame(myUsername) {
 
     const input = document.querySelector('#chat input')
     input.onkeypress = e => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && input.value) {
         applyMessageToSprite(me.id, input.value)
         ws.send(input.value);
         input.value = '';
