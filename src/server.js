@@ -17,6 +17,9 @@ let mousex = 54;
 let mousey = 41;
 
 function broadcast(packet) {
+  if (typeof packet === 'string') {
+    console.log(packet)
+  }
   for (const socket of wss.clients) {
     socket.send(packet)
   }
@@ -83,7 +86,6 @@ wss.on('connection', function connection(ws, request) {
             mousex = 20 + Math.random() * 60 | 0;
             mousey = 12 + Math.random() * 36 | 0;
           } while (MAP_TILES[mousey][mousex] !== 0)
-          console.log(`mouse moved to ${mousex}, ${mousey}`)
           broadcast(`mouse [${mousex},${mousey}]`)
           hasMouse[player.id] = true;
           ws.send('hasmouse true')

@@ -22,7 +22,6 @@ export const DY = {
 export function isWall(tile, isDog) {
   if (tile >= 180 && tile < 200) {
     const actioncollide = tile - 179;
-    console.log(actioncollide)
     return true;
   }
   if (tile >= 11 && tile < 80) return true;
