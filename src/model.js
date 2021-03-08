@@ -1,4 +1,4 @@
-import { MAP_TILES } from './map.js';
+import { MAP_TILES, MAP_NAMES } from './map.js';
 
 export const RIGHT = 3;
 export const DOWN = 1;
@@ -60,6 +60,9 @@ export class Player {
   toDeletedInt32() {
     return (this.id << 24);
   }
+  copy() {
+    return deserializePlayer(this.toInt32());
+  }
   move(direction, otherPlayers) {
     const nextX = this.x + DX[direction];
     const nextY = this.y + DY[direction];
@@ -97,6 +100,9 @@ export class Player {
   }
   sameRoomAs(other) {
     return this.xroom() === other.xroom() && this.yroom() === other.yroom();
+  }
+  roomName() {
+    return MAP_NAMES[this.yroom()][this.xroom()]
   }
 }
 

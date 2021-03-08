@@ -91,10 +91,14 @@ wss.on('connection', function connection(ws, request) {
           ws.send('invalid invalid')
           return;
         }
+        const oldState = player.copy();
         const moved = player.move(data[2], players)
         if (!moved) {
           ws.send('invalid invalid')
           return;
+        } else if (!player.sameRoomAs(oldState)) {
+          broadcastRoom(oldState, `move-message [ ${names[player.id].toLocaleUpperCase()} LEFT ${oldState.roomName()} ]`)
+          broadcastRoom(player, `move-message [ ${names[player.id].toLocaleUpperCase()} ENTERED ${player.roomName()} ]`)
         }
         const tileAt = MAP_TILES[player.y][player.x];
         if (player.x === mousex && player.y === mousey && !hasMouse[player.id]) {
