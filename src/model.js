@@ -46,6 +46,7 @@ export class Player {
     this.facing = 2;
     this.isNapping = false;
     this.isDog = false;
+    this.socket = null;
   }
   toInt32() {
     return (this.id << 24)
@@ -87,6 +88,12 @@ export class Player {
       return true
     }
     return false;
+  }
+  xroom() {
+    return Math.floor(this.x / 20)
+  }
+  yroom() {
+    return Math.floor(this.y / 12)
   }
 }
 

@@ -23,6 +23,16 @@ function broadcast(packet) {
     socket.send(packet)
   }
 }
+function broadcastRoom(sender, packet) {
+  if (typeof packet === 'string') {
+    console.log(packet)
+  }
+  for (const other of players) {
+    if (sender.xroom() === other.xroom() && sender.yroom() === other.yroom()) {
+      other.socket.send(packet)
+    }
+  }
+}
 
 const padMessages = {
   100: isDog => isDog ? 'Woof Woof Woof!' : "I'm in the mush room!",
@@ -54,6 +64,7 @@ wss.on('connection', function connection(ws, request) {
   }
 
   const player = new Player(availableIDs.pop());
+  player.socket = ws;
   players.add(player);
   hasMouse[player.id] = false;
   scores[player.id] = 0;
@@ -111,7 +122,7 @@ wss.on('connection', function connection(ws, request) {
       if (data.length > 50) {
         return;
       }
-      broadcast(`${player.id} ${data}`);
+      broadcastRoom(player, `${player.id} ${data}`);
       player.applyChatMessage(data);
     }
   })
