@@ -382,6 +382,7 @@ async function enterGame(myUsername) {
     document.querySelector('#game').style.display = '';
 
     let currentHandle = null;
+    let currentDirections = [];
     window.addEventListener('keydown', e => {
       const direction = keyMap[e.key];
       if (direction == undefined) {
@@ -390,13 +391,22 @@ async function enterGame(myUsername) {
       }
       if (e.repeat) return;
       event.preventDefault();
-      clearInterval(currentHandle);
-      const handle = setInterval(doMove, 250, direction);
-      currentHandle = handle
-      window.addEventListener('keyup', e2 => {
-        if (e2.key === e.key) clearInterval(handle);
-      })
+      if (currentDirections.includes(direction)) return;
       doMove(direction);
+      currentDirections.unshift(direction);
+      clearInterval(currentHandle);
+      currentHandle = setInterval(() => doMove(currentDirections[0]), 135);
+    })
+    window.addEventListener('keyup', e => {
+      const direction = keyMap[e.key];
+      if (direction == undefined) return;
+      const idx = currentDirections.indexOf(direction);
+      if (idx !== -1) {
+        currentDirections.splice(idx, 1);
+        if (currentDirections.length === 0) {
+          clearInterval(currentHandle);
+        }
+      }
     })
 
     const canvas = document.querySelector('canvas')
