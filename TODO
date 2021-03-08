@@ -1,6 +1,3 @@
-Make chat be local to specific areas of the map
-Entered/exited room messages
-Fix timing for animations and movement
 Announce "has mouse", "already has mouse", and "scored"
 Dog altar (and "___ is a dog now")
 Tag, and temporary freezing when tagged
@@ -9,3 +6,4 @@ Room listing
 Room passwords
 Go back to room selector upon connection error
 /kick
+Local room chat separated
