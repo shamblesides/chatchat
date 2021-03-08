@@ -95,6 +95,9 @@ export class Player {
   yroom() {
     return Math.floor(this.y / 12)
   }
+  sameRoomAs(other) {
+    return this.xroom() === other.xroom() && this.yroom() === other.yroom();
+  }
 }
 
 export function deserializePlayer(i32) {

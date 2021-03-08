@@ -176,8 +176,10 @@ async function enterGame(myUsername) {
     if (sprite.parent.x !== newX || sprite.parent.y !== newY) {
       sprite.parent.x = newX
       sprite.parent.y = newY
-      const pianoKey = MAP_TILES[player.y][player.x] - 83;
-      if (SOUNDS_PIANO[pianoKey]) SOUNDS_PIANO[pianoKey].play();
+      if (player.sameRoomAs(me)) {
+        const pianoKey = MAP_TILES[player.y][player.x] - 83;
+        if (SOUNDS_PIANO[pianoKey]) SOUNDS_PIANO[pianoKey].play();
+      }
     }
     const spriteOffset = player.color * 20 + (player.isNapping ? 12 : (player.facing * 2))
     sprite.textures[0] = spriteTextures[spriteOffset]

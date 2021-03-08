@@ -28,7 +28,7 @@ function broadcastRoom(sender, packet) {
     console.log(packet)
   }
   for (const other of players) {
-    if (sender.xroom() === other.xroom() && sender.yroom() === other.yroom()) {
+    if (sender.sameRoomAs(other)) {
       other.socket.send(packet)
     }
   }
