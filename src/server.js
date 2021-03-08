@@ -1,5 +1,4 @@
 import WebSocket from 'ws';
-import { decode } from 'querystring';
 import { Player } from './model.js'
 import { MAP_TILES } from './map.js';
 
@@ -42,6 +41,12 @@ wss.on('connection', function connection(ws, request) {
   if (!name.match(/^\w{1,16}$/g)) {
     ws.close(4400, 'invalid name');
     return;
+  }
+  for (const other of players) {
+    if (names[other.id] === name) {
+      ws.close(4400, 'That name is already taken');
+      return;
+    }
   }
   if (players.size === MAX_PLAYERS) {
     ws.close(4509, "Too many players online")

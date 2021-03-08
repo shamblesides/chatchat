@@ -371,11 +371,14 @@ async function enterGame(myUsername) {
     }
   }
   ws.onclose = function(ev) {
-    console.error('Lost connection')
+    document.querySelector('#game').style.display = 'none';
+    document.querySelector('#chat').style.display = 'none';
+    document.querySelector('#loader').style.display = '';
+    document.querySelector('#loader').innerText = ev.reason;
   }
 
   wsOpen.then(() => {
-    document.querySelector('#loader').remove();
+    document.querySelector('#loader').style.display = 'none';
     document.querySelector('#game').style.display = '';
 
     let currentHandle = null;
