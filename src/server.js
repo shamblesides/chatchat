@@ -129,8 +129,8 @@ Room.prototype.accept = function accept (ws, name) {
           ws.send('invalid invalid')
           return;
         } else if (!player.sameRoomAs(oldState)) {
-          this.broadcastRoom(oldState, `move-message [ ${this.names[player.id].toLocaleUpperCase()} LEFT ${oldState.roomName()} ]`)
-          this.broadcastRoom(player, `move-message [ ${this.names[player.id].toLocaleUpperCase()} ENTERED ${player.roomName()} ]`)
+          this.broadcastRoom(oldState, `move-message [ ${this.names[player.id]} left ${oldState.roomName()} ]`)
+          this.broadcastRoom(player, `move-message [ ${this.names[player.id]} entered ${player.roomName()} ]`)
         }
         const tileAt = MAP_TILES[player.y][player.x];
         if (player.x === this.mousex && player.y === this.mousey && !this.hasMouse[player.id]) {
@@ -147,7 +147,7 @@ Room.prototype.accept = function accept (ws, name) {
           ws.send('hasmouse false')
           this.broadcast(`score {"id":${player.id},"score":${this.scores[player.id]},"cat":true}`)
         } else if (PAD_MESSAGES[tileAt]) {
-          const msg = `-= BROADCAST FROM ${this.names[player.id].toLocaleUpperCase()}: ${PAD_MESSAGES[tileAt](player.isDog)} =-`
+          const msg = `-= Broadcast from ${this.names[player.id]}: ${PAD_MESSAGES[tileAt](player.isDog)} =-`
           this.broadcast(`pad-message ${msg}`)
         }
         broadcastSelfToAllPlayers();
@@ -170,7 +170,7 @@ Room.prototype.accept = function accept (ws, name) {
     const buffer = Buffer.alloc(4);
     buffer.writeInt32BE(player.toDeletedInt32())
     this.broadcast(buffer)
-    this.broadcast(`join-message [ ${this.names[player.id].toLocaleUpperCase()} LEFT THE GAME ]`)
+    this.broadcast(`join-message [ ${this.names[player.id]} left the game ]`)
   });
 
   const firstPayload = Buffer.alloc(this.players.size * 4)
@@ -181,7 +181,7 @@ Room.prototype.accept = function accept (ws, name) {
   ws.send(`names ${JSON.stringify(this.names)}`);
   ws.send(firstPayload)
   ws.send(`mouse [${this.mousex},${this.mousey}]`)
-  this.broadcast(`join-message [ ${this.names[player.id].toLocaleUpperCase()} ENTERED THE GAME ]`)
+  this.broadcast(`join-message [ ${this.names[player.id]} entered the game ]`)
   this.broadcast(`names ${JSON.stringify({ [player.id]: name })}`);
 
   const buffer = Buffer.alloc(4);
