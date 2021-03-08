@@ -51,7 +51,7 @@
       font: inherit;
       padding: 4px;
     }
-    #title, #name-entry {
+    #title, #name-entry, #connecting, #room-entry {
       background-image: url(graphics/bg1.gif);
       background-size: calc(100vmin * 2 / 64);
       width: 100vmin;
@@ -98,6 +98,59 @@
     #name-entry form input {
       text-align: center;
       margin-top: 1vmin;
+    }
+    #connecting {
+      background-image: url(graphics/bg2.gif);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #connecting p {
+      min-width: 50%;
+    }
+    #room-entry {
+      background-image: url(graphics/bg2.gif);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #room-entry h1 {
+      text-transform: uppercase;
+      width: 40%;
+    }
+    #room-entry table {
+      display: block;
+      width: 60%;
+      height: 40%;
+      padding: 0 5%;
+      margin: 3% 0;
+    }
+    #room-entry tbody {
+      overflow-y: scroll;
+    }
+    #room-entry th {
+      font-weight: normal;
+      padding: 5% 0;
+    }
+    #room-entry tr > *:first-child {
+      text-align: left;
+      max-width: 99%;
+    }
+    #room-entry tr > *:last-child {
+      text-align: center;
+      width: 1%;
+    }
+    #room-entry table button {
+      font: inherit;
+      text-align: left;
+      background: none;
+      border: none;
+      padding: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
     }
     canvas, #loader {
       display: block;
@@ -181,6 +234,26 @@
       <label for="username">Enter your name:</label>
       <input type="text" pattern="\w+" maxlength="16" name="username">
     </form>
+  </div>
+  <div id="connecting" style="display: none;">
+    <p class="borderbox">Waiting for roomlist...</p>
+  </div>
+  <div id="room-entry" style="display: none;">
+    <h1 class="borderbox">Lobby</h1>
+    <table class="borderbox">
+      <thead>
+        <tr>
+          <th>Rooms Online</th>
+          <th>Cats</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <div style="display: flex; width: 60%; justify-content: space-between;">
+      <button class="borderbox" id="refresh-rooms-button" style="width: 45%">Refresh List</button>
+      <button class="borderbox" id="create-room-button" style="width: 45%">Create Room</button>
+    </div>
   </div>
   <div id="loader" style="display:none">Loading</div>
   <canvas id="game" style="display:none"></canvas>

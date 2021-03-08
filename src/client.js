@@ -45,6 +45,9 @@ const playerColors = [
   `rgb(54, 139, 230)`,
 ];
 
+const API_HOST = location.protocol === 'https:' ? 'https://chatchatgame.herokuapp.com' : 'http://localhost:12000';
+const WS_HOST = API_HOST.replace(/^http/, 'ws');
+
 function logMessage(text, fn) {
   const p = document.createElement('p');
   p.innerText = text;
@@ -68,17 +71,54 @@ document.querySelector('#name-entry form').onsubmit = function(evt) {
   evt.preventDefault();
   const username = evt.target.elements.username.value;
   document.querySelector('#name-entry').style.display = 'none';
-  enterGame(username);
+  enterLobby(username);
 }
 
-async function enterGame(myUsername) {
-  document.querySelector('#loader').style.display = '';
-  document.querySelector('#chat').style.display = '';
-  await texturesReady;
-  document.querySelector('#loader').innerText = 'Connecting...'
+function enterLobby(myUsername) {
+  document.querySelector('#connecting').style.display = '';
 
-  const wsURL = location.protocol === 'https:' ? 'wss://chatchatgame.herokuapp.com' : 'ws://localhost:12000'
-  const ws = new WebSocket(`${wsURL}/?name=${myUsername}`);
+  fetch(API_HOST)
+  .then(res => {
+    if (!res.ok) throw new Error('Game server is sick :(')
+    else return res.json()
+  })
+  .then(data => {
+    document.querySelector('#connecting').style.display = 'none';
+    document.querySelector('#room-entry').style.display = '';
+    const table = document.querySelector('#room-entry table')
+    for (const { name, cats } of data) {
+      const tr = document.createElement('tr');
+      table.appendChild(tr);
+      const td1 = document.createElement('td');
+      tr.appendChild(td1);
+      const button = document.createElement('button');
+      td1.appendChild(button);
+      button.innerText = name;
+      const td2 = document.createElement('td');
+      tr.appendChild(td2);
+      td2.innerText = cats;
+      button.onclick = enterRoom.bind(null, name)
+    }
+    document.querySelector('#create-room-button').onclick = function(evt) {
+      const roomName = prompt("Name of this room?", `${myUsername}_room`)
+      if (roomName) {
+        enterRoom(roomName)
+      }
+    }
+    function enterRoom (roomName) {
+      document.querySelector('#room-entry').style.display = 'none';
+      document.querySelector('#connecting').style.display = '';
+      document.querySelector('#connecting p').innerText = 'Loading textures...'
+      texturesReady.then(() => {
+        document.querySelector('#connecting p').innerText = `Now connecting to ${roomName}...`
+        enterGame(myUsername)
+      });;
+    }
+  })
+}
+
+function enterGame(myUsername) {
+  const ws = new WebSocket(`${WS_HOST}/?name=${myUsername}`);
   ws.binaryType = 'arraybuffer';
 
   const wsOpen = new Promise(done => {
@@ -380,8 +420,9 @@ async function enterGame(myUsername) {
   }
 
   wsOpen.then(() => {
-    document.querySelector('#loader').style.display = 'none';
+    document.querySelector('#connecting').style.display = 'none';
     document.querySelector('#game').style.display = '';
+    document.querySelector('#chat').style.display = '';
 
     let currentHandle = null;
     let currentDirections = [];

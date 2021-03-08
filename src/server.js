@@ -1,3 +1,4 @@
+import http from 'http';
 import WebSocket from 'ws';
 import { Player } from './model.js'
 import { MAP_TILES } from './map.js';
@@ -13,7 +14,8 @@ const PAD_MESSAGES = {
 }
 
 class Room {
-  constructor () {
+  constructor (name) {
+    this.name = name;
     this.availableIDs = Array(MAX_PLAYERS).fill().map((_,i) => i);
     this.players = new Set();
     this.hasMouse = {};
@@ -24,22 +26,34 @@ class Room {
   }
 }
 
-const wss = new WebSocket.Server({ port: process.env.PORT || 12000 })
+const rooms = [new Room("Default room")]
 
-const room = new Room();
+const hserv = http.createServer(function (req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST')
+  res.setHeader('Access-Control-Allow-Headers', 'content-type')
 
-wss.on('connection', function connection(ws, request) {
-  const name = new URL(request.url, 'https://example.org').searchParams.get('name');
-  if (!name) {
-    ws.close(4400, 'missing name');
-    return;
+  if (req.method === 'OPTIONS') {
+    res.end()
+  } else if (req.method === 'GET') {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(rooms.map(r => ({ name: r.name, cats: r.players.size }))))
+  } else if (req.method === 'POST') {
+    res.end();
   }
-  if (!name.match(/^\w{1,16}$/g)) {
-    ws.close(4400, 'invalid name');
-    return;
-  }
-  room.accept(ws, name);
-});
+})
+
+const wss = new WebSocket.Server({ noServer: true })
+hserv.on('upgrade', function (request, sock, head) {
+  const room = rooms[0];
+  wss.handleUpgrade(request, sock, head, (ws) => {
+    wss.emit('connection', ws, request)
+    const params = new URL(request.url, 'https://example.org').searchParams;
+    const name = params.get('name');
+    room.accept(ws, name)
+  });
+})
+
 
 Room.prototype.broadcast = function broadcast(packet) {
   if (typeof packet === 'string') {
@@ -62,6 +76,14 @@ Room.prototype.broadcastRoom = function broadcastRoom(sender, packet) {
 }
 
 Room.prototype.accept = function accept (ws, name) {
+  if (!name) {
+    ws.close(4400, 'missing name');
+    return;
+  }
+  if (!name.match(/^\w{1,16}$/g)) {
+    ws.close(4400, 'invalid name');
+    return;
+  }
   for (const other of this.players) {
     if (this.names[other.id] === name) {
       ws.close(4400, 'That name is already taken');
@@ -179,3 +201,8 @@ setInterval(() => {
     }
   }
 }, 30 * 1000); // heroku kills connections after 55 seconds of inactivity
+
+const listener = hserv.listen(process.env.PORT || 12000, () => {
+  const addr = listener.address();
+  console.log(`chatchat: listening on port ${addr.port}`);
+})
