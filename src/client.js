@@ -177,12 +177,18 @@ function enterGame(myUsername) {
   hasMouseSprite.visible = false
   application.stage.addChild(hasMouseSprite);
 
-  const deadMouse = new Sprite(spriteTextures[402])
-  deadMouse.x = 16 * 49.5 * 2;
-  deadMouse.y = 16 * 30.25 * 2;
-  deadMouse.scale.set(2,2)
-  deadMouse.visible = false;
-  world.addChild(deadMouse);
+  const deadMouseHouse = new Sprite(spriteTextures[402])
+  deadMouseHouse.x = 16 * 49.5 * 2;
+  deadMouseHouse.y = 16 * 30.25 * 2;
+  deadMouseHouse.scale.set(2,2)
+  deadMouseHouse.visible = false;
+  world.addChild(deadMouseHouse);
+  const deadMouseAltar = new Sprite(spriteTextures[402])
+  deadMouseAltar.x = 16 * 73.5 * 2;
+  deadMouseAltar.y = 16 * 5.75 * 2;
+  deadMouseAltar.scale.set(2,2)
+  deadMouseAltar.visible = false;
+  world.addChild(deadMouseAltar);
 
   const me = new Player(999);
 
@@ -221,7 +227,7 @@ function enterGame(myUsername) {
         if (SOUNDS_PIANO[pianoKey]) SOUNDS_PIANO[pianoKey].play();
       }
     }
-    const spriteOffset = player.color * 20 + (player.isNapping ? 12 : (player.facing * 2))
+    const spriteOffset = player.color * 20 + player.isDog * 200 + (player.isNapping ? 12 : (player.facing * 2))
     sprite.textures[0] = spriteTextures[spriteOffset]
     sprite.textures[1] = spriteTextures[spriteOffset + 1]
     sprite.gotoAndPlay(1-sprite.currentFrame)
@@ -233,6 +239,7 @@ function enterGame(myUsername) {
     ['/purr', { offset: 10, timer: 3000, cat: true, catSounds: [SOUND_CAT_PURR], does: 'purrs'  }],
     ['/screech', { offset: 14, timer: 3000, cat: true, catSounds: [SOUND_CAT_SCREECH], does: 'screeches' }],
     ['/bark', { offset: 8, timer: 3000, dog: true, dogSounds: SOUNDS_DOG_BARK, does: 'barks' }],
+    ['/woof', { offset: 8, timer: 3000, dog: true, dogSounds: SOUNDS_DOG_BARK, does: 'barks' }],
     ['/pant', { offset: 10, timer: 3000, dog: true, dogSounds: [SOUND_DOG_PANT], does: 'pants' }],
     ['/howl', { offset: 14, timer: 3000, dog: true, dogSounds: [SOUND_DOG_HOWL], does: 'howls' }],
     ['/nap', { offset: 12, catSounds: [SOUND_CAT_NAP], dogSounds: [SOUND_DOG_NAP], does: 'takes a nap' }],
@@ -247,7 +254,7 @@ function enterGame(myUsername) {
     if (emote.dog && !player.isDog) return;
     if (emote.cat && player.isDog) return;
 
-    const spriteOffset = player.color * 20 + emote.offset;
+    const spriteOffset = player.color * 20 + player.isDog * 200 + emote.offset;
     const sprite = catSprites.get(id);
     sprite.textures[0] = spriteTextures[spriteOffset]
     sprite.textures[1] = spriteTextures[spriteOffset + 1]
@@ -316,6 +323,31 @@ function enterGame(myUsername) {
             me.color = parsed.color;
             updated = true;
           }
+          if (me.isDog !== parsed.isDog) {
+            me.isDog = parsed.isDog;
+            updated = true;
+
+            const overlay = new Graphics().beginFill(0xFFFFFF).drawRect(0, 0, SCRW, SCRH).endFill();
+            application.stage.addChild(overlay);
+            setTimeout(() => {
+              application.stage.removeChild(overlay);
+
+              const shakeFreq = 4;
+              let shake = 10 * shakeFreq;
+              const handle = setInterval(() => {
+                shake--;
+                if (shake === 0) {
+                  application.stage.x = 0;
+                  application.stage.y = 0;
+                  clearInterval(handle);
+                } else if (shake % shakeFreq === 0) {
+                  application.stage.x = Math.random() * 5 - 3 | 0;
+                  application.stage.y = Math.random() * 5 - 3 | 0;
+                }
+              })
+            }, 100)
+
+          }
           const expected = unconfirmedMovements.shift();
           if (expected == null || parsed.x !== expected.x || parsed.y !== expected.y) {
             me.x = parsed.x;
@@ -357,16 +389,13 @@ function enterGame(myUsername) {
         const hasmouse = msg === 'true';
         if (hasmouse) SOUND_MOUSE.play();
         hasMouseSprite.visible = hasmouse;
-      } else if (type === 'score') {
-        const { id, score, cat } = JSON.parse(msg);
-        if (id === me.id) {
-          console.log({ score })
-          SOUNDS_CAT_MEOW[0].play()
-        }
-        if (cat) {
-          deadMouse.visible = true;
-          setTimeout(() => deadMouse.visible = false, 5000)
-        }
+      } else if (type === 'dropoff') {
+        const { isDog, transformed } = JSON.parse(msg);
+        const sfxList = transformed ? [isDog ? SOUND_DOG_HOWL : SOUND_CAT_SCREECH] : (isDog ? SOUNDS_DOG_BARK : SOUNDS_CAT_MEOW);
+        sfxList[Math.random() * sfxList.length | 0].play();
+        const whichMouse = isDog ? deadMouseAltar : deadMouseHouse;
+        whichMouse.visible = true;
+        setTimeout(() => whichMouse.visible = false, 5000)
       } else if (type === 'invalid') {
         console.log('oops, rewind')
         unconfirmedMovements.splice(0, Infinity);

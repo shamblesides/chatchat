@@ -43,7 +43,7 @@ export class Player {
     this.x = x;
     this.y = y;
     this.color = this.id % 10;
-    this.facing = 2;
+    this.facing = LEFT;
     this.isNapping = false;
     this.isDog = false;
     this.socket = null;
@@ -112,8 +112,8 @@ export function deserializePlayer(i32) {
   const y = (i32 >>> 8) & 0xFF;
   const p = new Player(id, x, y);
   p.color = (i32 >>> 4) & 0x0F;
-  p.isDog = (i32 >>> 3) & 0x01;
-  p.isNapping = (i32 >>> 2) & 0x01;
+  p.isDog = !!((i32 >>> 3) & 0x01);
+  p.isNapping = !!((i32 >>> 2) & 0x01);
   p.facing = (i32 >>> 0) & 0x03;
   return p;
 }

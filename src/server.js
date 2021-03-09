@@ -13,6 +13,10 @@ const PAD_MESSAGES = {
   104: isDog => isDog ? 'Woof! Woof Woof Woof!' : "Meow Meow Meow!",
 }
 
+function whitelistDogChat(msg) {
+  return (msg.startsWith('/me ') || ['/bark', '/woof', '/pant', '/howl', '/nap'].includes(msg))
+}
+
 class Room {
   constructor (name) {
     this.name = name;
@@ -147,24 +151,28 @@ Room.prototype.accept = function accept (ws, name) {
             ws.send('hasmouse true')
           }
         } else if (player.isAtDoorstep() && this.hasMouse[player.id]) {
-          if (player.isDog) {
-            // TODO
+          const transformed = player.isDog;
+          player.isDog = false;
+          this.hasMouse[player.id] = false;
+          ws.send('hasmouse false')
+          this.broadcastRoom(player, `dropoff {"isDog":${player.isDog},"transformed":${transformed}}`)
+          if (transformed) {
+            this.broadcast(`join-message [ ${this.names[player.id]} is a cat now ]`)
           } else {
-            this.hasMouse[player.id] = false;
             this.scores[player.id]++;
-            ws.send('hasmouse false')
-            this.broadcast(`score {"id":${player.id},"score":${this.scores[player.id]},"cat":true}`)
             this.broadcast(`join-message [ ${this.names[player.id]} left a present at the house! SCORE: ${this.scores[player.id]} ]`)
           }
         } else if (player.isAtDogAltar() && this.hasMouse[player.id]) {
-          if (player.isDog) {
-            this.hasMouse[player.id] = false;
-            this.scores[player.id]++;
-            ws.send('hasmouse false')
-            this.broadcast(`score {"id":${player.id},"score":${this.scores[player.id]},"cat":true}`)
-            this.broadcast(`join-message [ ${this.names[player.id]} left a present at the altar! SCORE: ${this.scores[player.id]} ]`)
+          const transformed = !player.isDog;
+          player.isDog = true;
+          this.hasMouse[player.id] = false;
+          ws.send('hasmouse false')
+          this.broadcastRoom(player, `dropoff {"isDog":${player.isDog},"transformed":${transformed}}`)
+          if (transformed) {
+            this.broadcast(`join-message [ ${this.names[player.id]} is a dog now ]`)
           } else {
-            // TODO
+            this.scores[player.id]++;
+            this.broadcast(`join-message [ ${this.names[player.id]} left a present at the altar! SCORE: ${this.scores[player.id]} ]`)
           }
         } else if (PAD_MESSAGES[tileAt]) {
           const msg = `-= Broadcast from ${this.names[player.id]}: ${PAD_MESSAGES[tileAt](player.isDog)} =-`
@@ -179,7 +187,8 @@ Room.prototype.accept = function accept (ws, name) {
       if (data.length > 50) {
         return;
       }
-      this.broadcastRoom(player, `${player.id} ${data}`);
+      const words = (player.isDog && !whitelistDogChat(data)) ? 'woof '.repeat([2,3,3,4][Math.random()*4|0]).trim() : data;
+      this.broadcastRoom(player, `${player.id} ${words}`);
       player.applyChatMessage(data);
     }
   })
