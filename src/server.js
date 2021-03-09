@@ -133,19 +133,39 @@ Room.prototype.accept = function accept (ws, name) {
           this.broadcastRoom(player, `move-message [ ${this.names[player.id]} entered ${player.roomName()} ]`)
         }
         const tileAt = MAP_TILES[player.y][player.x];
-        if (player.x === this.mousex && player.y === this.mousey && !this.hasMouse[player.id]) {
-          do {
-            this.mousex = 20 + Math.random() * 60 | 0;
-            this.mousey = 12 + Math.random() * 36 | 0;
-          } while (MAP_TILES[this.mousey][this.mousex] !== 0)
-          this.broadcast(`mouse [${this.mousex},${this.mousey}]`)
-          this.hasMouse[player.id] = true;
-          ws.send('hasmouse true')
+        if (player.x === this.mousex && player.y === this.mousey) {
+          if(this.hasMouse[player.id]) {
+            this.broadcast(`move-message [ ${this.names[player.id]} found a mouse - but already has one! ]`)
+          } else {
+            do {
+              this.mousex = 20 + Math.random() * 60 | 0;
+              this.mousey = 12 + Math.random() * 36 | 0;
+            } while (MAP_TILES[this.mousey][this.mousex] !== 0)
+            this.broadcast(`move-message [ ${this.names[player.id]} found a mouse! ]`)
+            this.broadcast(`mouse [${this.mousex},${this.mousey}]`)
+            this.hasMouse[player.id] = true;
+            ws.send('hasmouse true')
+          }
         } else if (player.isAtDoorstep() && this.hasMouse[player.id]) {
-          this.hasMouse[player.id] = false;
-          this.scores[player.id]++;
-          ws.send('hasmouse false')
-          this.broadcast(`score {"id":${player.id},"score":${this.scores[player.id]},"cat":true}`)
+          if (player.isDog) {
+            // TODO
+          } else {
+            this.hasMouse[player.id] = false;
+            this.scores[player.id]++;
+            ws.send('hasmouse false')
+            this.broadcast(`score {"id":${player.id},"score":${this.scores[player.id]},"cat":true}`)
+            this.broadcast(`join-message [ ${this.names[player.id]} left a present at the house! SCORE: ${this.scores[player.id]} ]`)
+          }
+        } else if (player.isAtDogAltar() && this.hasMouse[player.id]) {
+          if (player.isDog) {
+            this.hasMouse[player.id] = false;
+            this.scores[player.id]++;
+            ws.send('hasmouse false')
+            this.broadcast(`score {"id":${player.id},"score":${this.scores[player.id]},"cat":true}`)
+            this.broadcast(`join-message [ ${this.names[player.id]} left a present at the altar! SCORE: ${this.scores[player.id]} ]`)
+          } else {
+            // TODO
+          }
         } else if (PAD_MESSAGES[tileAt]) {
           const msg = `-= Broadcast from ${this.names[player.id]}: ${PAD_MESSAGES[tileAt](player.isDog)} =-`
           this.broadcast(`pad-message ${msg}`)
