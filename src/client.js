@@ -1,6 +1,6 @@
 import { settings, SCALE_MODES, Application, Sprite, Container, AnimatedSprite, Graphics, Text } from './pixi.js';
 import { ready as texturesReady, spriteTextures, tileTextures } from './textures.js';
-import { LEFT, DOWN, UP, RIGHT, DX, DY, Player, deserializePlayer, isWall } from './model.js'
+import { LEFT, DOWN, UP, RIGHT, Player, deserializePlayer, isWall } from './model.js'
 import { MAP_TILES } from './map.js';
 import { Graph, astar } from './astar.js';
 

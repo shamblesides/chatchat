@@ -5,14 +5,14 @@ export const DOWN = 1;
 export const LEFT = 2;
 export const UP = 0;
 
-export const DX = {
+const DX = {
   [RIGHT]: 1,
   [LEFT]: -1,
   [UP]: 0,
   [DOWN]: 0
 };
 
-export const DY = {
+const DY = {
   [DOWN]: 1,
   [UP]: -1,
   [RIGHT]: 0,
