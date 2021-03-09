@@ -1,3 +1,10 @@
+// javascript-astar 0.4.1
+// http://github.com/bgrins/javascript-astar
+// Freely distributable under the MIT License.
+// Implements the astar search algorithm in javascript using a Binary Heap.
+// Includes Binary Heap (with modifications) from Marijn Haverbeke.
+// http://eloquentjavascript.net/appendix2.html
+
 function pathTo(node) {
   var curr = node;
   var path = [];
