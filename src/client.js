@@ -76,6 +76,7 @@ document.querySelector('#name-entry form').onsubmit = function(evt) {
 
 function enterLobby(myUsername) {
   document.querySelector('#connecting').style.display = '';
+  document.querySelector('#refresh-rooms-button').onclick = () => enterLobby(myUsername);
 
   fetch(API_HOST)
   .then(res => {
@@ -85,10 +86,11 @@ function enterLobby(myUsername) {
   .then(data => {
     document.querySelector('#connecting').style.display = 'none';
     document.querySelector('#room-entry').style.display = '';
-    const table = document.querySelector('#room-entry table')
+    const tbody = document.querySelector('#room-entry table tbody')
+    tbody.innerHTML = '';
     for (const { name, cats } of data) {
       const tr = document.createElement('tr');
-      table.appendChild(tr);
+      tbody.appendChild(tr);
       const td1 = document.createElement('td');
       tr.appendChild(td1);
       const button = document.createElement('button');
