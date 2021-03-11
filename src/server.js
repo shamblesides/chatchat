@@ -25,6 +25,7 @@ class Room {
     this.hasMouse = {};
     this.scores = {};
     this.names = {};
+    this.frozens = {};
     this.mousex = 54;
     this.mousey = 41;
   }
@@ -79,6 +80,12 @@ Room.prototype.broadcastRoom = function broadcastRoom(sender, packet) {
   }
 }
 
+Room.prototype.broadcastPlayer = function broadcastPlayer (player) {
+  const buffer = Buffer.alloc(4);
+  buffer.writeInt32BE(player.toInt32())
+  this.broadcast(buffer);
+}
+  
 Room.prototype.accept = function accept (ws, name) {
   if (!name) {
     ws.close(4400, 'missing name');
@@ -106,19 +113,17 @@ Room.prototype.accept = function accept (ws, name) {
   this.scores[player.id] = 0;
   this.names[player.id] = name;
 
-  const broadcastSelfToAllPlayers = () => {
-    const buffer = Buffer.alloc(4);
-    buffer.writeInt32BE(player.toInt32())
-    this.broadcast(buffer);
-  }
-  
   ws.on('pong', () => ws.isAlive = true)
 
   ws.on('message', (data) => {
     if (data instanceof Buffer) {
+      if (this.frozens[player.id]) {
+        ws.send('invalid invalid')
+        return;
+      }
       try {
-        if (data.length !== 3) {
-          throw new Error('Buffer should be 3 bytes')
+        if (data.length !== 4) {
+          throw new Error('Buffer should be 4 bytes')
         }
         if (data[2] < 0 || data[2] > 3) {
           throw new Error('Invalid direction')
@@ -127,17 +132,28 @@ Room.prototype.accept = function accept (ws, name) {
           ws.send('invalid invalid')
           return;
         }
+        const faceOnly = !!data[3]
         const oldState = player.copy();
-        const moved = player.move(data[2], this.players)
-        if (!moved) {
+        const { updated, target } = player.move(data[2], this.players, faceOnly)
+        if (!updated && !target) {
           ws.send('invalid invalid')
           return;
-        } else if (!player.sameRoomAs(oldState)) {
+        }
+        if (!player.sameRoomAs(oldState)) {
           this.broadcastRoom(oldState, `move-message [ ${this.names[player.id]} left ${oldState.roomName()} ]`)
           this.broadcastRoom(player, `move-message [ ${this.names[player.id]} entered ${player.roomName()} ]`)
         }
         const tileAt = MAP_TILES[player.y][player.x];
-        if (player.x === this.mousex && player.y === this.mousey) {
+        if (target && player.isDog && !target.isDog) {
+          player.isDog = false;
+          target.isDog = true;
+          // broadcast target here; but as for me, I will be broadcasted later in this func
+          this.broadcastPlayer(target);
+          this.broadcast(`join-message [ ${this.names[player.id]} caught ${this.names[target.id]}! ${this.names[target.id]} is a dog now ]`)
+          target.socket.send('frozen true')
+          this.frozens[target.id] = true;
+          setTimeout(() => this.frozens[target.id] = false, 5000)
+        } else if (player.x === this.mousex && player.y === this.mousey) {
           if(this.hasMouse[player.id]) {
             this.broadcast(`move-message [ ${this.names[player.id]} found a mouse - but already has one! ]`)
           } else {
@@ -178,7 +194,7 @@ Room.prototype.accept = function accept (ws, name) {
           const msg = `-= Broadcast from ${this.names[player.id]}: ${PAD_MESSAGES[tileAt](player.isDog)} =-`
           this.broadcast(`pad-message ${msg}`)
         }
-        broadcastSelfToAllPlayers();
+        this.broadcastPlayer(player);
       } catch (err) {
         console.trace(err)
         ws.close(4400, err.message)

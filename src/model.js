@@ -32,9 +32,9 @@ export function isWall(tile, isDog) {
 
 function playerCollides(me, x, y, others) {
   for (const o of others) {
-    if (o !== me && o.x === x && o.y === y) return true;
+    if (o !== me && o.x === x && o.y === y) return o;
   }
-  return false;
+  return null;
 }
 
 export class Player {
@@ -63,19 +63,21 @@ export class Player {
   copy() {
     return deserializePlayer(this.toInt32());
   }
-  move(direction, otherPlayers) {
+  move(direction, otherPlayers, faceOnly=false) {
     const nextX = this.x + DX[direction];
     const nextY = this.y + DY[direction];
     const tile = MAP_TILES[nextY][nextX];
-    const collided = isWall(tile, this.isDog) || playerCollides(this, nextX, nextY, otherPlayers)
-    if (!collided) {
+    const target = playerCollides(this, nextX, nextY, otherPlayers);
+    const collided = isWall(tile, this.isDog) || (target != null)
+    const moved = !collided && !faceOnly;
+    if (moved) {
       this.x = nextX;
       this.y = nextY;
     }
-    const updated = !collided || (this.facing !== direction) || this.isNapping;
+    const updated = moved || (this.facing !== direction) || this.isNapping;
     this.facing = direction;
     this.isNapping = false;
-    return updated;
+    return { updated, moved, collided, target }
   }
   isAtDoorstep() {
     const {x,y} = this;

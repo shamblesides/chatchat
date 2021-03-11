@@ -177,6 +177,18 @@ function enterGame(myUsername) {
   hasMouseSprite.visible = false
   application.stage.addChild(hasMouseSprite);
 
+  const iAmFrozenSprite = new Container();
+  iAmFrozenSprite.x = (SCRW - 160) / 2;
+  iAmFrozenSprite.y = (SCRH - 32) / 2;
+  iAmFrozenSprite.addChild(new Graphics()
+    .beginFill(0xffffff).drawRect(0,0,160,32).endFill()
+    .beginFill(0x000000).drawRect(1,1,158,30).endFill()
+    .beginFill(0xffffff).drawRect(2,2,156,28).endFill()
+  )
+  iAmFrozenSprite.addChild(Object.assign(new Text(' No backsies!\nFrozen for 5 seconds', { fontFamily:'ChatChat', fontSize: 8, align: 'center' }), { x: 27, y: 8 }));
+  iAmFrozenSprite.visible = false
+  application.stage.addChild(iAmFrozenSprite);
+
   const deadMouseHouse = new Sprite(spriteTextures[402])
   deadMouseHouse.x = 16 * 49.5 * 2;
   deadMouseHouse.y = 16 * 30.25 * 2;
@@ -294,18 +306,22 @@ function enterGame(myUsername) {
   const unconfirmedMovements = [];
 
   function doMove(direction) {
-    const packet = new Uint8Array([me.x, me.y, direction]);
-    const updated = me.move(direction, catStates.values());
-    if (updated) {
+    const fromX = me.x;
+    const fromY = me.y;
+    const { updated, moved, target } = me.move(direction, catStates.values());
+    const packet = new Uint8Array([fromX, fromY, direction, moved?0:1]);
+    if (updated || target) {
       unconfirmedMovements.push({ x: me.x, y: me.y });
       ws.send(packet);
+      updateSprite(me);
+    }
+    if (moved) {
       const myTile = MAP_TILES[me.y][me.x]
       if (myTile in HELP_MESSAGES) {
         SOUND_HELP.play();
         const text = `-= Help: ${HELP_MESSAGES[myTile](me.isDog)} =-`;
         logMessage(text, p => p.classList.add('help-message'));
       }
-      updateSprite(me);
       updateCamera();
     }
   }
@@ -347,6 +363,8 @@ function enterGame(myUsername) {
               })
             }, 100)
 
+            const yowl = me.isDog ? SOUND_DOG_HOWL : SOUND_CAT_SCREECH;
+            yowl.play();
           }
           const expected = unconfirmedMovements.shift();
           if (expected == null || parsed.x !== expected.x || parsed.y !== expected.y) {
@@ -403,6 +421,9 @@ function enterGame(myUsername) {
         me.y = lastConfirmedPosition.y;
         updateSprite(me);
         updateCamera();
+      } else if (type === 'frozen') {
+        iAmFrozenSprite.visible = true;
+        setTimeout(() => iAmFrozenSprite.visible = false, 5000);
       } else if (type.endsWith('-message')) {
         logMessage(msg, p => p.classList.add(type));
         if (type === 'pad-message') {
