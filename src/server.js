@@ -117,6 +117,9 @@ Room.prototype.accept = function accept (ws, name) {
   const handle = setInterval(() => spamScore = Math.max(spamScore - 1, 0), 1000);
   ws.on('close', () => clearInterval(handle));
 
+  let padSpamCooldown = 0;
+  let foundMouseSpamCooldown = 0;
+
   ws.on('pong', () => ws.isAlive = true)
 
   ws.on('message', (data) => {
@@ -159,7 +162,10 @@ Room.prototype.accept = function accept (ws, name) {
           setTimeout(() => this.frozens[target.id] = false, 5000)
         } else if (player.x === this.mousex && player.y === this.mousey) {
           if(this.hasMouse[player.id]) {
-            this.broadcast(`move-message [ ${this.names[player.id]} found a mouse - but already has one! ]`)
+            if (foundMouseSpamCooldown < Date.now() - 5000) {
+              foundMouseSpamCooldown = Date.now();
+              this.broadcast(`move-message [ ${this.names[player.id]} found a mouse - but already has one! ]`)
+            }
           } else {
             do {
               this.mousex = 20 + Math.random() * 60 | 0;
@@ -195,8 +201,11 @@ Room.prototype.accept = function accept (ws, name) {
             this.broadcast(`join-message [ ${this.names[player.id]} left a present at the altar! SCORE: ${this.scores[player.id]} ]`)
           }
         } else if (PAD_MESSAGES[tileAt]) {
-          const msg = `-= Broadcast from ${this.names[player.id]}: ${PAD_MESSAGES[tileAt](player.isDog)} =-`
-          this.broadcast(`pad-message ${msg}`)
+          if (padSpamCooldown < Date.now() - 5000) {
+            padSpamCooldown = Date.now();
+            const msg = `-= Broadcast from ${this.names[player.id]}: ${PAD_MESSAGES[tileAt](player.isDog)} =-`
+            this.broadcast(`pad-message ${msg}`)
+          }
         }
         this.broadcastPlayer(player);
       } catch (err) {
