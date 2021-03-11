@@ -465,8 +465,8 @@ function enterGame(myUsername) {
   ws.onclose = function(ev) {
     document.querySelector('#game').style.display = 'none';
     document.querySelector('#chat').style.display = 'none';
-    document.querySelector('#loader').style.display = '';
-    document.querySelector('#loader').innerText = ev.reason;
+    document.querySelector('#connecting').style.display = '';
+    document.querySelector('#connecting p').innerText = ev.reason;
   }
 
   wsOpen.then(() => {
