@@ -113,6 +113,10 @@ Room.prototype.accept = function accept (ws, name) {
   this.scores[player.id] = 0;
   this.names[player.id] = name;
 
+  let spamScore = 0;
+  const handle = setInterval(() => spamScore = Math.max(spamScore - 1, 0), 1000);
+  ws.on('close', () => clearInterval(handle));
+
   ws.on('pong', () => ws.isAlive = true)
 
   ws.on('message', (data) => {
@@ -201,6 +205,11 @@ Room.prototype.accept = function accept (ws, name) {
       }
     } else {
       if (data.length > 50) {
+        return;
+      }
+      spamScore++;
+      if (spamScore > 10) {
+        ws.close(4400, "Too many messages!")
         return;
       }
       const words = (player.isDog && !whitelistDogChat(data)) ? 'woof '.repeat([2,3,3,4][Math.random()*4|0]).trim() : data;
