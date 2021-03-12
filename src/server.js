@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'crypto';
 import http from 'http';
 import WebSocket from 'ws';
 import { Player } from './model.js'
@@ -18,12 +19,22 @@ function whitelistDogChat(msg) {
   return (msg.startsWith('/me ') || ['/bark', '/woof', '/pant', '/howl', '/nap'].includes(msg))
 }
 
+function comparePasswords(str, buf2) {
+  if (str.length > 100) return false;
+  const buf1 = Buffer.from(str);
+  let diff = buf1.length ^ buf2.length;
+  const comp = diff ? buf1 : buf2;
+  diff |= +!timingSafeEqual(buf1, comp);
+  return diff === 0;
+}
+
 const availableRoomIDs = Array(MAX_ROOMS).fill().map((_,i) => i).reverse();
 
 class Room {
-  constructor (name) {
+  constructor (name, pass='') {
     this.id = availableRoomIDs.pop();
     this.name = name;
+    this.pass = pass ? Buffer.from(pass, 'utf8') : null;
     this.availableIDs = Array(MAX_PLAYERS).fill().map((_,i) => i).reverse();
     this.players = new Set();
     this.hasMouse = {};
@@ -40,18 +51,24 @@ const rooms = [new Room("default_room")]
 const hserv = http.createServer(function (req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST')
-  res.setHeader('Access-Control-Allow-Headers', 'content-type,x-room-name')
+  res.setHeader('Access-Control-Allow-Headers', 'content-type,x-room-name,x-room-pass')
 
   if (req.method === 'OPTIONS') {
     res.end()
   } else if (req.method === 'GET') {
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(rooms.map(r => ({ id: r.id, name: r.name, cats: r.players.size }))))
+    res.end(JSON.stringify(rooms.map(r => ({ id: r.id, name: r.name, cats: r.players.size, hasPassword: !!r.pass }))))
   } else if (req.method === 'POST') {
     const roomName = req.headers['x-room-name'];
+    const pass = req.headers['x-room-pass'] || '';
     if (!roomName.match(/^\w{1,20}$/g)) {
       res.statusCode = 400;
       res.end("Invalid room name")
+      return;
+    }
+    if (pass.length > 100) {
+      res.statusCode = 400;
+      res.end("Password is too long")
       return;
     }
     if (rooms.length >= MAX_ROOMS) {
@@ -59,7 +76,7 @@ const hserv = http.createServer(function (req, res) {
       res.end("Server overloaded - too many rooms")
       return;
     }
-    const room = new Room(roomName);
+    const room = new Room(roomName, pass);
     rooms.push(room);
     res.setHeader('Content-Type', 'application/json');
     res.end(`{"id":${room.id}}`);
@@ -73,9 +90,14 @@ hserv.on('upgrade', function (request, sock, head) {
     const params = new URL(request.url, 'https://example.org').searchParams;
     const name = params.get('name');
     const roomid = parseInt(params.get('roomid'));
+    const pass = params.get('pass') || '';
     const room = rooms.find(room => room.id === roomid);
     if (!room) {
       ws.close(4400, `Could not find room ${roomid}`)
+      return;
+    }
+    if (room.pass && !comparePasswords(pass, room.pass)) {
+      ws.close(4400, `Wrong password`)
       return;
     }
     room.accept(ws, name)
