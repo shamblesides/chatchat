@@ -564,7 +564,7 @@ function enterGame(roomID, roomPass, myUsername) {
           currentHandle = setInterval(() => {
             doMove(directions.shift())
             if (directions.length === 0) clearInterval(currentHandle)
-          }, 250)
+          }, 135)
         }
       }
     }
