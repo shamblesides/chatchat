@@ -186,7 +186,7 @@ function enterGame(roomID, roomPass, myUsername) {
   const mouse = new AnimatedSprite([180, 200, 181, 201].map(n => tileTextures[n]));
   mouse.scale.set(2,2)
   mouse.animationSpeed = 1/32;
-  mouse.play().catch(noop);
+  mouse.play();
   world.addChild(mouse);
   function placeMouse(x, y) {
     mouse.x = x * 16 * 2;
@@ -247,7 +247,7 @@ function enterGame(roomID, roomPass, myUsername) {
       sprite = new AnimatedSprite([spriteTextures[0], spriteTextures[1]]);
       sprite.scale.set(2,2)
       sprite.animationSpeed = 1/32;
-      sprite.play().catch(noop);
+      sprite.play();
       container.addChild(sprite);
       catSprites.set(player.id, sprite)
 
