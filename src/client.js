@@ -69,11 +69,13 @@ document.querySelector('#title button').onclick = function(evt) {
   document.querySelector('#name-entry input').focus();
 }
 document.querySelector('[name=username]').value = `Kitty${Math.random()*10|0}${Math.random()*10|0}`;
-document.querySelector('#name-entry form').onsubmit = function(evt) {
-  evt.preventDefault();
-  const username = evt.target.elements.username.value;
-  document.querySelector('#name-entry').style.display = 'none';
-  enterLobby(username);
+document.querySelector('#name-entry input').onkeypress = function(evt) {
+  if (evt.key === 'Enter' && evt.target.value) {
+    evt.preventDefault();
+    const username = evt.target.value;
+    document.querySelector('#name-entry').style.display = 'none';
+    enterLobby(username);
+  }
 }
 
 function enterLobby(myUsername) {
