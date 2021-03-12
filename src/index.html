@@ -51,7 +51,7 @@
       font: inherit;
       padding: 4px;
     }
-    #title, #name-entry, #connecting, #room-entry {
+    #title, #name-entry, #connecting, #room-entry, #room-create, #pass-guard {
       background-image: url(graphics/bg1.gif);
       background-size: calc(100vmin * 2 / 64);
       width: 100vmin;
@@ -99,21 +99,15 @@
       text-align: center;
       margin-top: 1vmin;
     }
-    #connecting {
-      background-image: url(graphics/bg2.gif);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    #connecting p {
-      min-width: 50%;
-    }
-    #room-entry {
+    #connecting, #room-entry, #room-create, #pass-guard {
       background-image: url(graphics/bg2.gif);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
+    }
+    #connecting p {
+      min-width: 50%;
     }
     #room-entry h1 {
       text-transform: uppercase;
@@ -151,6 +145,19 @@
       width: 100%;
       height: 100%;
       box-sizing: border-box;
+    }
+    #room-create > div,
+    #pass-guard > div:first-of-type {
+      padding: 5%;
+      width: 70%;
+      margin: 3% 0;
+    }
+    #room-create input,
+    #pass-guard input {
+      text-align: center;
+    }
+    #room-create input:first-of-type {
+      margin-bottom: 6%;
     }
     canvas {
       display: block;
@@ -255,6 +262,25 @@
     <div style="display: flex; width: 60%; justify-content: space-between;">
       <button class="borderbox" id="refresh-rooms-button" style="width: 45%">Refresh List</button>
       <button class="borderbox" id="create-room-button" style="width: 45%">Create Room</button>
+    </div>
+  </div>
+  <div id="room-create" style="display: none;">
+    <div class="borderbox">
+      <label for="roomname">Name this room:</label>
+      <input type="text" pattern="\w+" maxlength="20" name="roomname">
+      <label for="roompass">Optional room password:</label>
+      <input type="text" maxlength="100" name="roompass">
+    </div>
+    <button class="borderbox" id="submit-room-button" style="width: 45%">Create</button>
+  </div>
+  <div id="pass-guard" style="display: none;">
+    <div class="borderbox">
+      <label for="roompass">Enter this room's password:</label>
+      <input type="text" maxlength="100" name="roompass">
+    </div>
+    <div style="display: flex; width: 70%; justify-content: space-between;">
+      <button class="borderbox" id="pass-guard-back-button" style="width: 45%">Back to List</button>
+      <button class="borderbox" id="pass-guard-enter-button" style="width: 45%">Join Room</button>
     </div>
   </div>
   <canvas id="game" style="display:none"></canvas>

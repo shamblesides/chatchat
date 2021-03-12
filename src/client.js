@@ -104,37 +104,49 @@ function enterLobby(myUsername) {
       tr.appendChild(td2);
       td2.innerText = cats;
       button.onclick = () => {
-        let pass = hasPassword ? prompt('Please enter the password for this room.') : '';
-        if (pass != null) {
-          enterRoom(id, name, pass)
+        if (hasPassword) {
+          document.querySelector('#room-entry').style.display = 'none';
+          document.querySelector('#pass-guard').style.display = '';
+          document.querySelector('#pass-guard input').focus();
+          document.querySelector('#pass-guard-back-button').onclick = function (evt) {
+            document.querySelector('#pass-guard').style.display = 'none';
+            enterLobby(myUsername);
+          }
+          document.querySelector('#pass-guard-enter-button').onclick = function (evt) {
+            document.querySelector('#pass-guard').style.display = 'none';
+            const pass = document.querySelector('#pass-guard input[name=roompass]').value
+            enterRoom(id, name, pass)
+          }
+        } else {
+          enterRoom(id, name, '')
         }
       }
     }
     document.querySelector('#create-room-button').onclick = function(evt) {
-      const roomName = prompt("Name of this room?", `${myUsername}_room`)
-      if (roomName == null) {
-        return;
-      }
-      if (roomName === '') {
-        alert('Room name cannot be blank')
-        return;
-      }
-      const pass = prompt("Add a password for this room? (Leave blank for no password)")
-      if (pass == null) {
-        return;
-      }
-
       document.querySelector('#room-entry').style.display = 'none';
-      document.querySelector('#connecting').style.display = '';
-      document.querySelector('#connecting p').innerText = 'Creating room...'
-      fetch(API_HOST, {method:'POST', headers: {'x-room-name': roomName, 'x-room-pass': pass}})
-      .then(res => {
-        if (!res.ok) throw new Error('Game server is sick :(')
-        else return res.json()
-      })
-      .then(data => {
-        enterRoom(data.id, roomName, pass)
-      })
+      document.querySelector('#room-create').style.display = '';
+      document.querySelector('#room-create input[name=roomname]').value = `${myUsername}_room`
+      document.querySelector('#room-create input[name=roomname]').focus();
+
+      document.querySelector('#submit-room-button').onclick = function (evt) {
+        const roomName = document.querySelector('#room-create input[name=roomname]').value;
+        if (roomName === '') {
+          alert('Room name cannot be blank')
+          return;
+        }
+        const pass = document.querySelector('#room-create input[name=roompass]').value;
+        document.querySelector('#room-create').style.display = 'none';
+        document.querySelector('#connecting').style.display = '';
+        document.querySelector('#connecting p').innerText = 'Creating room...'
+        fetch(API_HOST, {method:'POST', headers: {'x-room-name': roomName, 'x-room-pass': pass}})
+        .then(res => {
+          if (!res.ok) throw new Error('Game server is sick :(')
+          else return res.json()
+        })
+        .then(data => {
+          enterRoom(data.id, roomName, pass)
+        })
+      }
     }
     function enterRoom (roomID, roomName, roomPass) {
       document.querySelector('#room-entry').style.display = 'none';
