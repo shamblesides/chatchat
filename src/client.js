@@ -424,6 +424,7 @@ function enterGame(roomID, roomPass, myUsername) {
           world.removeChild(sprite.parent)
           sprite.destroy();
           catSprites.delete(parsed.id);
+          catStates.delete(parsed.id);
         } else {
           updateSprite(parsed);
         }
