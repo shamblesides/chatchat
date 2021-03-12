@@ -1,8 +1,10 @@
 # Chatchat Javascript Port
 
+**[Play it online!](https://chatchatgame.netlify.app)**
+
 This is my HTML5 port of ChatChat! [Original Flash version's source code can be found here](https://github.com/TerryCavanagh/chatchat)
 
-This is now the "official" live version, [which you can play on Kongregate!](http://www.kongregate.com/games/TerryCavanagh_B/chatchat)
+This is also now the "official" live version, [which you can find on Kongregate!](http://www.kongregate.com/games/TerryCavanagh_B/chatchat)
 
 ![screenshot](src/screenshot.png "ChatChat Screenshot")
 
