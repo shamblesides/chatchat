@@ -4,6 +4,8 @@ import { LEFT, DOWN, UP, RIGHT, Player, deserializePlayer, isWall } from './mode
 import { MAP_TILES } from './map.js';
 import { Graph, astar } from './astar.js';
 
+const noop = () => {};
+
 const SCRW = 16 * 10 * 2;
 const SCRH = 16 * 6 * 2;
 
@@ -184,7 +186,7 @@ function enterGame(roomID, roomPass, myUsername) {
   const mouse = new AnimatedSprite([180, 200, 181, 201].map(n => tileTextures[n]));
   mouse.scale.set(2,2)
   mouse.animationSpeed = 1/32;
-  mouse.play();
+  mouse.play().catch(noop);
   world.addChild(mouse);
   function placeMouse(x, y) {
     mouse.x = x * 16 * 2;
@@ -245,7 +247,7 @@ function enterGame(roomID, roomPass, myUsername) {
       sprite = new AnimatedSprite([spriteTextures[0], spriteTextures[1]]);
       sprite.scale.set(2,2)
       sprite.animationSpeed = 1/32;
-      sprite.play();
+      sprite.play().catch(noop);
       container.addChild(sprite);
       catSprites.set(player.id, sprite)
 
@@ -263,7 +265,7 @@ function enterGame(roomID, roomPass, myUsername) {
       sprite.parent.y = newY
       if (player.sameRoomAs(me)) {
         const pianoKey = MAP_TILES[player.y][player.x] - 83;
-        if (SOUNDS_PIANO[pianoKey]) SOUNDS_PIANO[pianoKey].play();
+        if (SOUNDS_PIANO[pianoKey]) SOUNDS_PIANO[pianoKey].play().catch(noop);
       }
     }
     const spriteOffset = player.color * 20 + player.isDog * 200 + (player.isNapping ? 12 : (player.facing * 2))
@@ -309,7 +311,7 @@ function enterGame(roomID, roomPass, myUsername) {
 
     const sounds = player.isDog ? emote.dogSounds : emote.catSounds;
     const sound = sounds[Math.random() * sounds.length | 0];
-    sound.play();
+    sound.play().catch(noop);
   }
 
   function updateCamera() {
@@ -345,7 +347,7 @@ function enterGame(roomID, roomPass, myUsername) {
     if (moved) {
       const myTile = MAP_TILES[me.y][me.x]
       if (myTile in HELP_MESSAGES) {
-        SOUND_HELP.play();
+        SOUND_HELP.play().catch(noop);
         const text = `-= Help: ${HELP_MESSAGES[myTile](me.isDog)} =-`;
         logMessage(text, p => p.classList.add('help-message'));
       }
@@ -391,7 +393,7 @@ function enterGame(roomID, roomPass, myUsername) {
             }, 100)
 
             const yowl = me.isDog ? SOUND_DOG_HOWL : SOUND_CAT_SCREECH;
-            yowl.play();
+            yowl.play().catch(noop);
           }
           const expected = unconfirmedMovements.shift();
           if (expected == null || parsed.x !== expected.x || parsed.y !== expected.y) {
@@ -432,12 +434,12 @@ function enterGame(roomID, roomPass, myUsername) {
         placeMouse(x,y);
       } else if (type === 'hasmouse') {
         const hasmouse = msg === 'true';
-        if (hasmouse) SOUND_MOUSE.play();
+        if (hasmouse) SOUND_MOUSE.play().catch(noop);
         hasMouseSprite.visible = hasmouse;
       } else if (type === 'dropoff') {
         const { isDog, transformed } = JSON.parse(msg);
         const sfxList = transformed ? [isDog ? SOUND_DOG_HOWL : SOUND_CAT_SCREECH] : (isDog ? SOUNDS_DOG_BARK : SOUNDS_CAT_MEOW);
-        sfxList[Math.random() * sfxList.length | 0].play();
+        sfxList[Math.random() * sfxList.length | 0].play().catch(noop);
         const whichMouse = isDog ? deadMouseAltar : deadMouseHouse;
         whichMouse.visible = true;
         setTimeout(() => whichMouse.visible = false, 5000)
@@ -454,7 +456,7 @@ function enterGame(roomID, roomPass, myUsername) {
       } else if (type.endsWith('-message')) {
         logMessage(msg, p => p.classList.add(type));
         if (type === 'pad-message') {
-          SOUND_BROADCAST.play();
+          SOUND_BROADCAST.play().catch(noop);
         }
       } else { // message from player
         const id = parseInt(type);
