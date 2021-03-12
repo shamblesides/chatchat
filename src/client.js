@@ -88,7 +88,7 @@ function enterLobby(myUsername) {
     document.querySelector('#room-entry').style.display = '';
     const tbody = document.querySelector('#room-entry table tbody')
     tbody.innerHTML = '';
-    for (const { name, cats } of data) {
+    for (const { id, name, cats } of data) {
       const tr = document.createElement('tr');
       tbody.appendChild(tr);
       const td1 = document.createElement('td');
@@ -99,28 +99,38 @@ function enterLobby(myUsername) {
       const td2 = document.createElement('td');
       tr.appendChild(td2);
       td2.innerText = cats;
-      button.onclick = enterRoom.bind(null, name)
+      button.onclick = enterRoom.bind(null, id, name)
     }
     document.querySelector('#create-room-button').onclick = function(evt) {
       const roomName = prompt("Name of this room?", `${myUsername}_room`)
       if (roomName) {
-        enterRoom(roomName)
+        document.querySelector('#room-entry').style.display = 'none';
+        document.querySelector('#connecting').style.display = '';
+        document.querySelector('#connecting p').innerText = 'Creating room...'
+        fetch(API_HOST, {method:'POST', headers: {'x-room-name': roomName}})
+        .then(res => {
+          if (!res.ok) throw new Error('Game server is sick :(')
+          else return res.json()
+        })
+        .then(data => {
+          enterRoom(data.id, roomName)
+        })
       }
     }
-    function enterRoom (roomName) {
+    function enterRoom (roomID, roomName) {
       document.querySelector('#room-entry').style.display = 'none';
       document.querySelector('#connecting').style.display = '';
       document.querySelector('#connecting p').innerText = 'Loading textures...'
       texturesReady.then(() => {
         document.querySelector('#connecting p').innerText = `Now connecting to ${roomName}...`
-        enterGame(myUsername)
+        enterGame(roomID, myUsername)
       });;
     }
   })
 }
 
-function enterGame(myUsername) {
-  const ws = new WebSocket(`${WS_HOST}/?name=${myUsername}`);
+function enterGame(roomID, myUsername) {
+  const ws = new WebSocket(`${WS_HOST}/?roomid=${roomID}&name=${myUsername}`);
   ws.binaryType = 'arraybuffer';
 
   const wsOpen = new Promise(done => {

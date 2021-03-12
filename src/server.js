@@ -3,7 +3,8 @@ import WebSocket from 'ws';
 import { Player } from './model.js'
 import { MAP_TILES } from './map.js';
 
-const MAX_PLAYERS = 256;
+const MAX_ROOMS = 256;
+const MAX_PLAYERS = 64;
 
 const PAD_MESSAGES = {
   100: isDog => isDog ? 'Woof Woof Woof!' : "I'm in the mush room!",
@@ -17,10 +18,13 @@ function whitelistDogChat(msg) {
   return (msg.startsWith('/me ') || ['/bark', '/woof', '/pant', '/howl', '/nap'].includes(msg))
 }
 
+const availableRoomIDs = Array(MAX_ROOMS).fill().map((_,i) => i).reverse();
+
 class Room {
   constructor (name) {
+    this.id = availableRoomIDs.pop();
     this.name = name;
-    this.availableIDs = Array(MAX_PLAYERS).fill().map((_,i) => i);
+    this.availableIDs = Array(MAX_PLAYERS).fill().map((_,i) => i).reverse();
     this.players = new Set();
     this.hasMouse = {};
     this.scores = {};
@@ -31,30 +35,49 @@ class Room {
   }
 }
 
-const rooms = [new Room("Default room")]
+const rooms = [new Room("default_room")]
 
 const hserv = http.createServer(function (req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST')
-  res.setHeader('Access-Control-Allow-Headers', 'content-type')
+  res.setHeader('Access-Control-Allow-Headers', 'content-type,x-room-name')
 
   if (req.method === 'OPTIONS') {
     res.end()
   } else if (req.method === 'GET') {
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(rooms.map(r => ({ name: r.name, cats: r.players.size }))))
+    res.end(JSON.stringify(rooms.map(r => ({ id: r.id, name: r.name, cats: r.players.size }))))
   } else if (req.method === 'POST') {
-    res.end();
+    const roomName = req.headers['x-room-name'];
+    if (!roomName.match(/^\w{1,20}$/g)) {
+      res.statusCode = 400;
+      res.end("Invalid room name")
+      return;
+    }
+    if (rooms.length >= MAX_ROOMS) {
+      res.statusCode = 500;
+      res.end("Server overloaded - too many rooms")
+      return;
+    }
+    const room = new Room(roomName);
+    rooms.push(room);
+    res.setHeader('Content-Type', 'application/json');
+    res.end(`{"id":${room.id}}`);
   }
 })
 
 const wss = new WebSocket.Server({ noServer: true })
 hserv.on('upgrade', function (request, sock, head) {
-  const room = rooms[0];
   wss.handleUpgrade(request, sock, head, (ws) => {
     wss.emit('connection', ws, request)
     const params = new URL(request.url, 'https://example.org').searchParams;
     const name = params.get('name');
+    const roomid = parseInt(params.get('roomid'));
+    const room = rooms.find(room => room.id === roomid);
+    if (!room) {
+      ws.close(4400, `Could not find room ${roomid}`)
+      return;
+    }
     room.accept(ws, name)
   });
 })
@@ -91,7 +114,7 @@ Room.prototype.accept = function accept (ws, name) {
     ws.close(4400, 'missing name');
     return;
   }
-  if (!name.match(/^\w{1,16}$/g)) {
+  if (!name.match(/^\w{1,10}$/g)) {
     ws.close(4400, 'invalid name');
     return;
   }
@@ -229,11 +252,18 @@ Room.prototype.accept = function accept (ws, name) {
 
   ws.once('close', () => {
     this.players.delete(player);
-    this.availableIDs.push(player.id)
-    const buffer = Buffer.alloc(4);
-    buffer.writeInt32BE(player.toDeletedInt32())
-    this.broadcast(buffer)
-    this.broadcast(`join-message [ ${this.names[player.id]} left the game ]`)
+    if (this.players.size === 0) {
+      if (this.id !== 0) {
+        rooms.splice(rooms.indexOf(this), 1);
+        availableRoomIDs.push(this.id);
+      }
+    } else {
+      this.availableIDs.push(player.id)
+      const buffer = Buffer.alloc(4);
+      buffer.writeInt32BE(player.toDeletedInt32())
+      this.broadcast(buffer)
+      this.broadcast(`join-message [ ${this.names[player.id]} left the game ]`)
+    }
   });
 
   const firstPayload = Buffer.alloc(this.players.size * 4)
