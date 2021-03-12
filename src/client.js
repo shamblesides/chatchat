@@ -493,7 +493,7 @@ function enterGame(roomID, roomPass, myUsername) {
     document.querySelector('#game').style.display = 'none';
     document.querySelector('#chat').style.display = 'none';
     document.querySelector('#connecting').style.display = '';
-    document.querySelector('#connecting p').innerText = ev.reason;
+    document.querySelector('#connecting p').innerText = ev.reason || 'Lost connection! Please refresh.';
   }
 
   wsOpen.then(() => {
