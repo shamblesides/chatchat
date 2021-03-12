@@ -1,4 +1,4 @@
-import { Loader, Rectangle, Texture } from './pixi.js';
+import { Loader, Rectangle, Texture } from './vendor/pixi.js';
 
 const loader = Loader.shared;
 

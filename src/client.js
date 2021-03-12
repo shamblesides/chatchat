@@ -1,8 +1,8 @@
-import { settings, SCALE_MODES, Application, Sprite, Container, AnimatedSprite, Graphics, Text } from './pixi.js';
+import { settings, SCALE_MODES, Application, Sprite, Container, AnimatedSprite, Graphics, Text } from './vendor/pixi.js';
 import { ready as texturesReady, spriteTextures, tileTextures } from './textures.js';
 import { LEFT, DOWN, UP, RIGHT, Player, deserializePlayer, isWall } from './model.js'
 import { MAP_TILES } from './map.js';
-import { Graph, astar } from './astar.js';
+import { Graph, astar } from './vendor/astar.js';
 
 const noop = () => {};
 
