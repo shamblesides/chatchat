@@ -80,7 +80,10 @@ document.querySelector('#name-entry input').onkeypress = function(evt) {
 
 function enterLobby(myUsername) {
   document.querySelector('#connecting').style.display = '';
-  document.querySelector('#refresh-rooms-button').onclick = () => enterLobby(myUsername);
+  document.querySelector('#refresh-rooms-button').onclick = () => {
+    document.querySelector('#room-entry').style.display = 'none';
+    enterLobby(myUsername);
+  }
 
   fetch(API_HOST)
   .then(res => {
