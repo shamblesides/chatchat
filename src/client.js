@@ -47,7 +47,7 @@ const playerColors = [
   `rgb(54, 139, 230)`,
 ];
 
-const API_HOST = location.protocol === 'https:' ? 'https://chatchatgame.herokuapp.com' : 'http://localhost:12000';
+const API_HOST = location.hostname !== 'localhost' ? 'https://chatchat.nfshost.com' : 'http://localhost:12000';
 const WS_HOST = API_HOST.replace(/^http/, 'ws');
 
 function logMessage(text, fn) {
@@ -164,7 +164,7 @@ function enterLobby(myUsername) {
 }
 
 function enterGame(roomID, roomPass, myUsername) {
-  const ws = new WebSocket(`${WS_HOST}/?roomid=${roomID}&name=${myUsername}&pass=${encodeURIComponent(roomPass)}`);
+  const ws = new WebSocket(`${WS_HOST}/ws/?roomid=${roomID}&name=${myUsername}&pass=${encodeURIComponent(roomPass)}`);
   ws.binaryType = 'arraybuffer';
 
   const wsOpen = new Promise(done => {
