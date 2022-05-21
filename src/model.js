@@ -67,8 +67,9 @@ export class Player {
     const nextX = this.x + DX[direction];
     const nextY = this.y + DY[direction];
     const tile = MAP_TILES[nextY][nextX];
-    const target = playerCollides(this, nextX, nextY, otherPlayers);
-    const collided = isWall(tile, this.isDog) || (target != null)
+    const collidedWithWall = isWall(tile, this.isDog);
+    const target = collidedWithWall ? null : playerCollides(this, nextX, nextY, otherPlayers);
+    const collided = collidedWithWall || (target != null);
     const moved = !collided && !faceOnly;
     if (moved) {
       this.x = nextX;
