@@ -5,7 +5,7 @@
     "ws": "^7.5.5"
   },
   "scripts": {
-    "start": "node src/server.js",
+    "start": "src/server.js",
     "dev": "concurrently \"nodemon src/server.js\" \"live-server src\""
   }
 }
