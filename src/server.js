@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { timingSafeEqual } from 'crypto';
 import http from 'http';
 import WebSocket from 'ws';
