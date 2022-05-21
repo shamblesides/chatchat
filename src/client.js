@@ -47,7 +47,7 @@ const playerColors = [
   `rgb(54, 139, 230)`,
 ];
 
-const API_HOST = location.hostname !== 'localhost' ? 'https://chatchat.nfshost.com' : 'http://localhost:12000';
+const API_HOST = location.hostname !== '127.0.0.1' ? 'https://chatchat.nfshost.com' : 'http://localhost:12000';
 const WS_HOST = API_HOST.replace(/^http/, 'ws');
 
 function logMessage(text, fn) {
@@ -87,7 +87,7 @@ function enterLobby(myUsername) {
 
   fetch(API_HOST)
   .then(res => {
-    if (!res.ok) throw new Error('Game server is sick :(')
+    if (!res.ok) throw new Error(`Game server is sick :( http ${res.statusText}`)
     else return res.json()
   })
   .then(data => {
