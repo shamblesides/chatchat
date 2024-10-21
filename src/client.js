@@ -96,6 +96,9 @@ function enterLobby(myUsername) {
     const tbody = document.querySelector('#room-entry table tbody')
     tbody.innerHTML = '';
     for (const { id, name, cats, hasPassword } of data) {
+      if (cats < 1 && id !== 'default_room') {
+        continue;
+      }
       const tr = document.createElement('tr');
       tbody.appendChild(tr);
       const td1 = document.createElement('td');
