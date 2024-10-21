@@ -12,7 +12,7 @@ echo 'Running rsync'
 rsync -arzP --delete --exclude=src/graphics --exclude=src/sounds package* src $REMOTE:/home/public
 
 echo 'Running npm install'
-ssh $REMOTE "cd /home/public && npm install"
+ssh $REMOTE "cd /home/public && npm install --omit=dev"
 
 echo "SIGKILL daemon process"
 ssh $REMOTE nfsn signal-daemon runserver KILL
