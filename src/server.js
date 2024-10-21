@@ -11,6 +11,14 @@ const MAX_PLAYERS = 64;
 const DEFAULT_ROOM_ID = "default_room";
 
 /**
+ * @param {Room | null} room 
+ * @param {string} logline 
+ */
+function log(room, logline) {
+  console.log(`[${new Date().toISOString()}] ${room?.id ?? 'ChatChatSrvr'}: ${logline}`)
+}
+
+/**
  * @type {Record<number, (isDog: boolean) => string>}
  */
 const PAD_MESSAGES = {
@@ -112,7 +120,11 @@ httpServer.on('upgrade', function (request, sock, head) {
         ws.close(4400, "Server overloaded - too many rooms")
         return;
       }
-      const newRoomid = randomUUID();
+      const newRoomid = randomUUID().slice(-12);
+      if (rooms.has(newRoomid)) {
+        ws.close(4400, `Temporary error - please try again`)
+        return;
+      }
       const room = new Room(newRoomid, roomName, pass);
       rooms.set(newRoomid, room);
       room.accept(ws, catName)
@@ -145,7 +157,7 @@ Room.prototype.send = function send(recipient, packet) {
  */
 Room.prototype.broadcast = function broadcast(packet) {
   if (typeof packet === 'string') {
-    console.log(packet)
+    log(this, packet);
   }
   for (const recipient of this.players) {
     this.send(recipient, packet);
@@ -158,7 +170,7 @@ Room.prototype.broadcast = function broadcast(packet) {
  */
 Room.prototype.broadcastRoom = function broadcastRoom(sender, packet) {
   if (typeof packet === 'string') {
-    console.log(packet)
+    log(this, packet);
   }
   for (const other of this.players) {
     if (sender.sameRoomAs(other)) {
@@ -374,8 +386,8 @@ setInterval(() => {
 const listener = httpServer.listen(process.env.PORT || 12000, () => {
   const addr = listener.address();
   if (addr && typeof addr === 'object') {
-    console.log(`chatchat: listening on port ${addr.port}`);
+    log(null, `listening on port ${addr.port}`);
   } else {
-    console.log(`chatchat: listening on ${addr}`);
+    log(null, `listening on ${addr}`);
   }
 })
