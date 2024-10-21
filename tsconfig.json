@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "checkJs": true,
+        "noEmit": true,
+        "strict": true,
+        "esModuleInterop": true,
+        "target": "ES2023"
+    },
+    "files": [
+        "src/server.js",
+        "src/model.js",
+        "src/map.js"
+    ]
+}

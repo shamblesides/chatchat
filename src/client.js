@@ -144,14 +144,7 @@ function enterLobby(myUsername) {
         document.querySelector('#room-create').style.display = 'none';
         document.querySelector('#connecting').style.display = '';
         document.querySelector('#connecting p').innerText = 'Creating room...'
-        fetch(API_HOST, {method:'POST', headers: {'x-room-name': roomName, 'x-room-pass': pass}})
-        .then(res => {
-          if (!res.ok) throw new Error('Game server is sick :(')
-          else return res.json()
-        })
-        .then(data => {
-          enterRoom(data.id, roomName, pass)
-        })
+        enterRoom(null, roomName, pass)
       }
     }
     function enterRoom (roomID, roomName, roomPass) {
@@ -160,14 +153,17 @@ function enterLobby(myUsername) {
       document.querySelector('#connecting p').innerText = 'Loading textures...'
       texturesReady.then(() => {
         document.querySelector('#connecting p').innerText = `Now connecting to ${roomName}...`
-        enterGame(roomID, roomPass, myUsername)
+        enterGame(roomID, roomName, roomPass, myUsername)
       });;
     }
   })
 }
 
-function enterGame(roomID, roomPass, myUsername) {
-  const ws = new WebSocket(`${WS_HOST}/ws/?roomid=${roomID}&name=${myUsername}&pass=${encodeURIComponent(roomPass)}`);
+function enterGame(roomID, roomName, roomPass, myUsername) {
+  const ws = roomID ?
+    new WebSocket(`${WS_HOST}/ws/?roomid=${roomID}&name=${myUsername}&pass=${encodeURIComponent(roomPass)}`) :
+    new WebSocket(`${WS_HOST}/ws/?roomname=${roomName}&name=${myUsername}&pass=${encodeURIComponent(roomPass)}`);
+
   ws.binaryType = 'arraybuffer';
 
   const wsOpen = new Promise(done => {
@@ -357,7 +353,7 @@ function enterGame(roomID, roomPass, myUsername) {
   function doMove(direction) {
     const fromX = me.x;
     const fromY = me.y;
-    const { updated, moved, target } = me.move(direction, catStates.values());
+    const { updated, moved, target } = me.move(direction, catStates.values(), false);
     const packet = new Uint8Array([fromX, fromY, direction, moved?0:1]);
     if (updated || target) {
       unconfirmedMovements.push({ x: me.x, y: me.y });

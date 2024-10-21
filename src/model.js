@@ -19,6 +19,10 @@ const DY = {
   [LEFT]: 0,
 }
 
+/**
+ * @param {number} tile 
+ * @param {boolean} isDog 
+ */
 export function isWall(tile, isDog) {
   if (tile >= 180 && tile < 200) {
     const actioncollide = tile - 179;
@@ -30,9 +34,15 @@ export function isWall(tile, isDog) {
   return false;
 }
 
-function playerCollides(me, x, y, others) {
+/**
+ * @param {Player} me 
+ * @param {number} nextX 
+ * @param {number} nextY 
+ * @param {Iterable<Player>} others 
+ */
+function playerCollides(me, nextX, nextY, others) {
   for (const o of others) {
-    if (o !== me && o.x === x && o.y === y) return o;
+    if (o !== me && o.x === nextX && o.y === nextY) return o;
   }
   return null;
 }
@@ -46,15 +56,14 @@ export class Player {
     this.facing = LEFT;
     this.isNapping = false;
     this.isDog = false;
-    this.socket = null;
   }
   toInt32() {
     return (this.id << 24)
          + (this.x << 16)
          + (this.y << 8)
          + (this.color << 4)
-         + (this.isDog << 3)
-         + (this.isNapping << 2)
+         + (+this.isDog << 3)
+         + (+this.isNapping << 2)
          + (this.facing << 0)
   }
   toDeletedInt32() {
@@ -63,7 +72,12 @@ export class Player {
   copy() {
     return deserializePlayer(this.toInt32());
   }
-  move(direction, otherPlayers, faceOnly=false) {
+  /**
+   * @param {0|1|2|3} direction 
+   * @param {Iterable<Player>} otherPlayers 
+   * @param {boolean} faceOnly 
+   */
+  move(direction, otherPlayers, faceOnly) {
     const nextX = this.x + DX[direction];
     const nextY = this.y + DY[direction];
     const tile = MAP_TILES[nextY][nextX];
@@ -88,6 +102,9 @@ export class Player {
     const {x,y} = this;
     return (x == 73 && y == 6) || (x == 74 && y == 6);
   }
+  /**
+   * @param {string} str 
+   */
   applyChatMessage(str) {
     if (str === '/nap') {
       this.isNapping = true;
@@ -101,6 +118,9 @@ export class Player {
   yroom() {
     return Math.floor(this.y / 12)
   }
+  /**
+   * @param {Player} other 
+   */
   sameRoomAs(other) {
     return this.xroom() === other.xroom() && this.yroom() === other.yroom();
   }
@@ -109,7 +129,11 @@ export class Player {
   }
 }
 
+/**
+ * @param {number} i32 
+ */
 export function deserializePlayer(i32) {
+  console.log(i32.toString(16));
   const id = (i32 >>> 24) & 0xFF;
   const x = (i32 >>> 16) & 0xFF;
   const y = (i32 >>> 8) & 0xFF;

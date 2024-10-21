@@ -2,10 +2,14 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "ws": "^7.5.5"
+    "ws": "^8.18.0"
   },
   "scripts": {
     "start": "src/server.js",
     "dev": "concurrently --raw \"nodemon src/server.js\" \"live-server src\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.13",
+    "@types/ws": "^8.5.12"
   }
 }

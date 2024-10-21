@@ -1,14 +1,18 @@
 #!/usr/bin/env node
 
-import { timingSafeEqual } from 'crypto';
-import http from 'http';
-import WebSocket from 'ws';
-import { Player } from './model.js'
+import { timingSafeEqual, randomUUID } from 'node:crypto';
+import * as http from 'node:http';
+import { WebSocketServer } from 'ws';
+import { DOWN, UP, LEFT, RIGHT, Player } from './model.js'
 import { MAP_TILES } from './map.js';
 
 const MAX_ROOMS = 256;
 const MAX_PLAYERS = 64;
+const DEFAULT_ROOM_ID = "default_room";
 
+/**
+ * @type {Record<number, (isDog: boolean) => string>}
+ */
 const PAD_MESSAGES = {
   100: isDog => isDog ? 'Woof Woof Woof!' : "I'm in the mush room!",
   101: isDog => isDog ? 'Woof Woof Woof!' : "I'm by the fountain!",
@@ -17,10 +21,17 @@ const PAD_MESSAGES = {
   104: isDog => isDog ? 'Woof! Woof Woof Woof!' : "Meow Meow Meow!",
 }
 
+/**
+ * @param {string} msg 
+ */
 function whitelistDogChat(msg) {
   return (msg.startsWith('/me ') || ['/bark', '/woof', '/pant', '/howl', '/nap'].includes(msg))
 }
 
+/**
+ * @param {string} str 
+ * @param {Buffer} buf2 
+ */
 function comparePasswords(str, buf2) {
   if (str.length > 100) return false;
   const buf1 = Buffer.from(str);
@@ -30,114 +41,146 @@ function comparePasswords(str, buf2) {
   return diff === 0;
 }
 
-const availableRoomIDs = Array(MAX_ROOMS).fill().map((_,i) => i).reverse();
-
 class Room {
-  constructor (name, pass='') {
-    this.id = availableRoomIDs.pop();
+  /**
+   * @param {string} id 
+   * @param {string} name 
+   * @param {string} pass 
+   */
+  constructor (id, name, pass) {
+    this.id = id;
     this.name = name;
     this.pass = pass ? Buffer.from(pass, 'utf8') : null;
-    this.availableIDs = Array(MAX_PLAYERS).fill().map((_,i) => i).reverse();
+    this.availableIDs = Array(MAX_PLAYERS).fill(null).map((_,i) => i).reverse();
+    /** @type {Set<Player>} */
     this.players = new Set();
+    /** @type {Record<number, boolean>} */
     this.hasMouse = {};
+    /** @type {Record<number, number>} */
     this.scores = {};
+    /** @type {Record<number, string>} */
     this.names = {};
+    /** @type {Record<number, boolean>} */
     this.frozens = {};
+    /** @type {WeakMap<Player, import('ws').WebSocket>} */
+    this.sockets = new WeakMap();
     this.mousex = 54;
     this.mousey = 41;
   }
 }
 
-const rooms = [new Room("default_room")]
+const rooms = new Map([[DEFAULT_ROOM_ID, new Room(DEFAULT_ROOM_ID, "default_room", "")]]);
 
-const hserv = http.createServer(function (req, res) {
+const httpServer = http.createServer(function (req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST')
-  res.setHeader('Access-Control-Allow-Headers', 'content-type,x-room-name,x-room-pass')
+  res.setHeader('Access-Control-Allow-Methods', 'GET')
 
-  if (req.method === 'OPTIONS') {
-    res.end()
-  } else if (req.method === 'GET') {
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(rooms.map(r => ({ id: r.id, name: r.name, cats: r.players.size, hasPassword: !!r.pass }))))
-  } else if (req.method === 'POST') {
-    const roomName = req.headers['x-room-name'];
-    const pass = req.headers['x-room-pass'] || '';
-    if (!roomName.match(/^\w{1,20}$/g)) {
-      res.statusCode = 400;
-      res.end("Invalid room name")
-      return;
-    }
-    if (pass.length > 100) {
-      res.statusCode = 400;
-      res.end("Password is too long")
-      return;
-    }
-    if (rooms.length >= MAX_ROOMS) {
-      res.statusCode = 500;
-      res.end("Server overloaded - too many rooms")
-      return;
-    }
-    const room = new Room(roomName, pass);
-    rooms.push(room);
-    res.setHeader('Content-Type', 'application/json');
-    res.end(`{"id":${room.id}}`);
-  }
+  const roomInfos = [...rooms.values()]
+    .map(r => ({ id: r.id, name: r.name, cats: r.players.size, hasPassword: !!r.pass }));
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(roomInfos));
 })
 
-const wss = new WebSocket.Server({ noServer: true })
-hserv.on('upgrade', function (request, sock, head) {
+const wss = new WebSocketServer({ noServer: true })
+httpServer.on('upgrade', function (request, sock, head) {
   wss.handleUpgrade(request, sock, head, (ws) => {
     wss.emit('connection', ws, request)
+    if (!request.url) {
+      ws.close(4400, `Malformed request`)
+      return;
+    }
     const params = new URL(request.url, 'https://example.org').searchParams;
-    const name = params.get('name');
-    const roomid = parseInt(params.get('roomid'));
+    const catName = params.get('name');
+    const roomid = params.get('roomid');
     const pass = params.get('pass') || '';
-    const room = rooms.find(room => room.id === roomid);
-    if (!room) {
-      ws.close(4400, `Could not find room ${roomid}`)
+    if (!catName) {
+      ws.close(4400, `Missing name`)
       return;
     }
-    if (room.pass && !comparePasswords(pass, room.pass)) {
-      ws.close(4400, `Wrong password`)
-      return;
+    if (roomid == null) {
+      // Creating a room
+      const roomName = params.get('roomname');
+      if (!roomName || (typeof roomName !== 'string') || !roomName.match(/^\w{1,20}$/g)) {
+        ws.close(4400, `Missing room name`)
+        return;
+      }
+      if (pass.length > 100) {
+        ws.close(4400, "Password is too long")
+        return;
+      }
+      if (rooms.size >= MAX_ROOMS) {
+        ws.close(4400, "Server overloaded - too many rooms")
+        return;
+      }
+      const newRoomid = randomUUID();
+      const room = new Room(newRoomid, roomName, pass);
+      rooms.set(newRoomid, room);
+      room.accept(ws, catName)
+    } else {
+      // Joining a room
+      const room = rooms.get(roomid);
+      if (!room) {
+        ws.close(4400, `Room not found; try a different room!`)
+        return;
+      }
+      if (room.pass && !comparePasswords(pass, room.pass)) {
+        ws.close(4400, `Wrong password`)
+        return;
+      }
+      room.accept(ws, catName)
     }
-    room.accept(ws, name)
   });
 })
 
+/**
+ * @param {Player} recipient 
+ * @param {string | Buffer} packet
+ */
+Room.prototype.send = function send(recipient, packet) {
+  this.sockets.get(recipient)?.send(packet)
+}
 
+/**
+ * @param {string | Buffer} packet 
+ */
 Room.prototype.broadcast = function broadcast(packet) {
   if (typeof packet === 'string') {
     console.log(packet)
   }
-  for (const player of this.players) {
-    player.socket.send(packet)
+  for (const recipient of this.players) {
+    this.send(recipient, packet);
   }
 }
 
+/**
+ * @param {Player} sender 
+ * @param {string | Buffer} packet
+ */
 Room.prototype.broadcastRoom = function broadcastRoom(sender, packet) {
   if (typeof packet === 'string') {
     console.log(packet)
   }
   for (const other of this.players) {
     if (sender.sameRoomAs(other)) {
-      other.socket.send(packet)
+      this.send(other, packet);
     }
   }
 }
 
+/**
+ * @param {Player} player 
+ */
 Room.prototype.broadcastPlayer = function broadcastPlayer (player) {
   const buffer = Buffer.alloc(4);
   buffer.writeInt32BE(player.toInt32())
   this.broadcast(buffer);
 }
   
+/**
+ * @param {import('ws').WebSocket} ws 
+ * @param {string} name 
+ */
 Room.prototype.accept = function accept (ws, name) {
-  if (!name) {
-    ws.close(4400, 'missing name');
-    return;
-  }
   if (!name.match(/^\w{1,10}$/g)) {
     ws.close(4400, 'invalid name');
     return;
@@ -154,11 +197,12 @@ Room.prototype.accept = function accept (ws, name) {
   }
 
   const player = new Player(this.availableIDs.pop());
-  player.socket = ws;
   this.players.add(player);
   this.hasMouse[player.id] = false;
   this.scores[player.id] = 0;
   this.names[player.id] = name;
+  this.frozens[player.id] = false;
+  this.sockets.set(player, ws);
 
   let spamScore = 0;
   const handle = setInterval(() => spamScore = Math.max(spamScore - 1, 0), 1000);
@@ -167,10 +211,12 @@ Room.prototype.accept = function accept (ws, name) {
   let padSpamCooldown = 0;
   let foundMouseSpamCooldown = 0;
 
-  ws.on('pong', () => ws.isAlive = true)
-
-  ws.on('message', (data) => {
-    if (data instanceof Buffer) {
+  ws.on('message', (rawData, isBinary) => {
+    if (isBinary) {
+      const data = rawData;
+      if (!(data instanceof Buffer)) {
+        throw new Error('unknown websocket data');
+      }
       if (this.frozens[player.id]) {
         ws.send('invalid invalid')
         return;
@@ -179,7 +225,8 @@ Room.prototype.accept = function accept (ws, name) {
         if (data.length !== 4) {
           throw new Error('Buffer should be 4 bytes')
         }
-        if (data[2] < 0 || data[2] > 3) {
+        const dir = data[2];
+        if (dir !== DOWN && dir !== UP && dir !== LEFT && dir !== RIGHT) {
           throw new Error('Invalid direction')
         }
         if (data[0] !== player.x || data[1] !== player.y) {
@@ -188,7 +235,7 @@ Room.prototype.accept = function accept (ws, name) {
         }
         const faceOnly = !!data[3]
         const oldState = player.copy();
-        const { updated, target } = player.move(data[2], this.players, faceOnly)
+        const { updated, target } = player.move(dir, this.players, faceOnly)
         if (!updated && !target) {
           ws.send('invalid invalid')
           return;
@@ -204,7 +251,7 @@ Room.prototype.accept = function accept (ws, name) {
           // broadcast target here; but as for me, I will be broadcasted later in this func
           this.broadcastPlayer(target);
           this.broadcast(`join-message [ ${this.names[player.id]} caught ${this.names[target.id]}! ${this.names[target.id]} is a dog now ]`)
-          target.socket.send('frozen true')
+          this.send(target, 'frozen true')
           this.frozens[target.id] = true;
           setTimeout(() => this.frozens[target.id] = false, 5000)
         } else if (player.x === this.mousex && player.y === this.mousey) {
@@ -257,9 +304,11 @@ Room.prototype.accept = function accept (ws, name) {
         this.broadcastPlayer(player);
       } catch (err) {
         console.trace(err)
-        ws.close(4400, err.message)
+        const message = (err instanceof Error) ? err.message : err?.toString() ?? 'Unknown error';
+        ws.close(4400, message)
       }
     } else {
+      const data = rawData.toString();
       if (data.length > 50) {
         return;
       }
@@ -277,9 +326,8 @@ Room.prototype.accept = function accept (ws, name) {
   ws.once('close', () => {
     this.players.delete(player);
     if (this.players.size === 0) {
-      if (this.id !== 0) {
-        rooms.splice(rooms.indexOf(this), 1);
-        availableRoomIDs.push(this.id);
+      if (this.id !== DEFAULT_ROOM_ID) {
+        rooms.delete(this.id);
       }
     } else {
       this.availableIDs.push(player.id)
@@ -291,8 +339,8 @@ Room.prototype.accept = function accept (ws, name) {
   });
 
   const firstPayload = Buffer.alloc(this.players.size * 4)
-  for (let i = 0, playerIterator = this.players.values(); i < this.players.size; ++i) {
-    firstPayload.writeInt32BE(playerIterator.next().value.toInt32(), i * 4);
+  for (const [i, player] of [...this.players.values()].entries())  {
+    firstPayload.writeInt32BE(player.toInt32(), i * 4);
   }
   ws.send(`id ${player.id}`)
   ws.send(`names ${JSON.stringify(this.names)}`);
@@ -304,22 +352,30 @@ Room.prototype.accept = function accept (ws, name) {
   const buffer = Buffer.alloc(4);
   buffer.writeInt32BE(player.toInt32())
   for (const other of this.players) {
-    if (player !== other) other.socket.send(buffer)
+    if (player !== other) this.send(other, buffer)
   }
 };
 
+/** @type {WeakSet<import('ws').WebSocket>} */
+const inactiveConnections = new WeakSet();
 setInterval(() => {
   for (const socket of wss.clients) {
-    if (socket.isAlive === false) {
+    if (inactiveConnections.has(socket)) {
+      inactiveConnections.delete(socket);
       socket.terminate();
     } else {
-      socket.isAlive = false;
+      inactiveConnections.add(socket);
       socket.ping()
+      socket.once('pong', () => inactiveConnections.delete(socket));
     }
   }
-}, 30 * 1000); // heroku kills connections after 55 seconds of inactivity
+}, 30 * 1000);
 
-const listener = hserv.listen(process.env.PORT || 12000, () => {
+const listener = httpServer.listen(process.env.PORT || 12000, () => {
   const addr = listener.address();
-  console.log(`chatchat: listening on port ${addr.port}`);
+  if (addr && typeof addr === 'object') {
+    console.log(`chatchat: listening on port ${addr.port}`);
+  } else {
+    console.log(`chatchat: listening on ${addr}`);
+  }
 })
