@@ -214,14 +214,14 @@ Room.prototype.accept = function accept (ws, name) {
   ws.on('message', (rawData, isBinary) => {
     if (isBinary) {
       const data = rawData;
-      if (!(data instanceof Buffer)) {
-        throw new Error('unknown websocket data');
-      }
-      if (this.frozens[player.id]) {
-        ws.send('invalid invalid')
-        return;
-      }
       try {
+        if (!(data instanceof Buffer)) {
+          throw new Error('unknown websocket data');
+        }
+        if (this.frozens[player.id]) {
+          ws.send('invalid invalid')
+          return;
+        }
         if (data.length !== 4) {
           throw new Error('Buffer should be 4 bytes')
         }
