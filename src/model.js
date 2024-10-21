@@ -133,7 +133,6 @@ export class Player {
  * @param {number} i32 
  */
 export function deserializePlayer(i32) {
-  console.log(i32.toString(16));
   const id = (i32 >>> 24) & 0xFF;
   const x = (i32 >>> 16) & 0xFF;
   const y = (i32 >>> 8) & 0xFF;
