@@ -59,9 +59,8 @@ class Room {
     this.id = id;
     this.name = name;
     this.pass = pass ? Buffer.from(pass, 'utf8') : null;
-    this.availableIDs = Array(MAX_PLAYERS).fill(null).map((_,i) => i).reverse();
-    /** @type {Set<Player>} */
-    this.players = new Set();
+    /** @type {Map<number, Player>} */
+    this.players = new Map();
     /** @type {Record<number, boolean>} */
     this.hasMouse = {};
     /** @type {Record<number, number>} */
@@ -159,7 +158,7 @@ Room.prototype.broadcast = function broadcast(packet) {
   if (typeof packet === 'string') {
     log(this, packet);
   }
-  for (const recipient of this.players) {
+  for (const recipient of this.players.values()) {
     this.send(recipient, packet);
   }
 }
@@ -172,7 +171,7 @@ Room.prototype.broadcastRoom = function broadcastRoom(sender, packet) {
   if (typeof packet === 'string') {
     log(this, packet);
   }
-  for (const other of this.players) {
+  for (const other of this.players.values()) {
     if (sender.sameRoomAs(other)) {
       this.send(other, packet);
     }
@@ -197,19 +196,21 @@ Room.prototype.accept = function accept (ws, name) {
     ws.close(4400, 'invalid name');
     return;
   }
-  for (const other of this.players) {
+  for (const other of this.players.values()) {
     if (this.names[other.id] === name) {
       ws.close(4400, 'That name is already taken');
       return;
     }
   }
-  if (this.players.size === MAX_PLAYERS) {
+  if (this.players.size >= MAX_PLAYERS) {
     ws.close(4509, "Too many players online")
     return;
   }
 
-  const player = new Player(this.availableIDs.pop());
-  this.players.add(player);
+  let playerId = 0;
+  while (this.players.has(playerId)) playerId++;
+  const player = new Player(playerId);
+  this.players.set(playerId, player);
   this.hasMouse[player.id] = false;
   this.scores[player.id] = 0;
   this.names[player.id] = name;
@@ -247,7 +248,7 @@ Room.prototype.accept = function accept (ws, name) {
         }
         const faceOnly = !!data[3]
         const oldState = player.copy();
-        const { updated, target } = player.move(dir, this.players, faceOnly)
+        const { updated, target } = player.move(dir, this.players.values(), faceOnly)
         if (!updated && !target) {
           ws.send('invalid invalid')
           return;
@@ -336,17 +337,13 @@ Room.prototype.accept = function accept (ws, name) {
   })
 
   ws.once('close', () => {
-    this.players.delete(player);
-    if (this.players.size === 0) {
-      if (this.id !== DEFAULT_ROOM_ID) {
-        rooms.delete(this.id);
-      }
-    } else {
-      this.availableIDs.push(player.id)
-      const buffer = Buffer.alloc(4);
-      buffer.writeInt32BE(player.toDeletedInt32())
-      this.broadcast(buffer)
-      this.broadcast(`join-message [ ${this.names[player.id]} left the game ]`)
+    this.players.delete(player.id);
+    const buffer = Buffer.alloc(4);
+    buffer.writeInt32BE(player.toDeletedInt32())
+    this.broadcast(buffer)
+    this.broadcast(`join-message [ ${this.names[player.id]} left the game ]`)
+    if (this.players.size === 0 && this.id !== DEFAULT_ROOM_ID) {
+      rooms.delete(this.id);
     }
   });
 
@@ -363,7 +360,7 @@ Room.prototype.accept = function accept (ws, name) {
 
   const buffer = Buffer.alloc(4);
   buffer.writeInt32BE(player.toInt32())
-  for (const other of this.players) {
+  for (const other of this.players.values()) {
     if (player !== other) this.send(other, buffer)
   }
 };
