@@ -12,7 +12,7 @@ This is also now the "official" live version, [which you can find on Kongregate!
 
 This port is complete! I believe it has all the features of the original ChatChat now, plus some extras:
 
-* Sligntly improved keyboard controls
+* Slightly improved keyboard controls
 * Touchscreen controls
 * Room passwords
 * Up to 64 players per room!
@@ -21,7 +21,7 @@ This port is complete! I believe it has all the features of the original ChatCha
 
 #### Setup
 
-[Requires Node 14+](https://nodejs.org/en/)
+[Requires Node 20+](https://nodejs.org/en/)
 
 In the project directory, install local dependencies:
 
