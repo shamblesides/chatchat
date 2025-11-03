@@ -254,6 +254,7 @@ function enterGame(roomID, roomName, roomPass, myUsername) {
   const names = { 999: myUsername };
 
   function updateSprite(player) {
+    if (!player) return;
     catStates.set(player.id, player);
     let sprite;
     if (catSprites.get(player.id)) {
@@ -427,6 +428,8 @@ function enterGame(roomID, roomName, roomPass, myUsername) {
           sprite.destroy();
           catSprites.delete(parsed.id);
           catStates.delete(parsed.id);
+          clearTimeout(emoteTimers[parsed.id]);
+          delete emoteTimers[parsed.id];
         } else {
           updateSprite(parsed);
         }
